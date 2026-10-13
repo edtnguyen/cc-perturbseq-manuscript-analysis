@@ -2,3 +2,9 @@ from .program_io import *
 from .program_figure2 import *
 from .program_annotation import *
 from .program_s4 import *
+from .screen_panels import *
+from .single_cell_panels import *
+from .focused_panels import *
+from .qc_panels import *
+from .benchmark_panels import *
+from .multiome_panels import *
