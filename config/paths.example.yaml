@@ -15,24 +15,28 @@ ccperturbseq:
   integrated_anndata: REPLACE_WITH_FINAL_INTEGRATED_H5AD
   d3_anndata: REPLACE_WITH_FINAL_D3_H5AD
   guide_assignment: REPLACE_WITH_FINAL_SCEPTRE_GUIDE_ASSIGNMENT
-  cnmf_usage: REPLACE_WITH_FINAL_K50_USAGE
-  cnmf_spectra: REPLACE_WITH_FINAL_K50_SPECTRA
+  cnmf_usage: REPLACE_WITH_FINAL_K50_USAGE_TSV_OR_H5AD
+  cnmf_spectra: /oak/stanford/groups/engreitz/Users/ymo/ipsc_ec/cnmf_output/ipsc-ec/ipsc-ec.spectra.k_50.dt_2_0.txt
   program_annotations: REPLACE_WITH_FINAL_PROGRAM_ANNOTATION_TABLE
   target_metadata: REPLACE_WITH_TARGET_METADATA
-  ec_fraction_table: REPLACE_WITH_FINAL_GUIDE_LEVEL_EC_PERCENTAGE_TABLE
+  ec_fraction_table: REPLACE_WITH_FINAL_GUIDE_OR_GENE_LEVEL_EC_EFFECT_TABLE
   preprocessing_qc: REPLACE_WITH_QC_INPUT_DIRECTORY_OR_TABLE
 
 programde:
-  effect_matrix_all_days: REPLACE_WITH_FINAL_PROGRAM_EFFECT_MATRIX
-  qvalue_matrix_all_days: REPLACE_WITH_FINAL_PROGRAM_QVALUE_MATRIX
-  real_target_pvalues: REPLACE_WITH_FINAL_REAL_TARGET_CRT_PVALUES
-  ntc_pseudotarget_pvalues: REPLACE_WITH_FINAL_NTC_PSEUDOTARGET_PVALUES
-  replicate_effects: REPLACE_WITH_FINAL_REPLICATE_EFFECT_TABLE
+  # Source notebook: program_level_temporal_map_notebooks/02_gene_program_effect_temporal_heatmap.ipynb
+  effect_matrix_all_days: /oak/stanford/groups/engreitz/Users/ymo/ipsc_ec/DE_bruce3.1_output/program_clusters
+  qvalue_matrix_all_days:
+  effects_filename: bothrep_program_effect_qvalue_merged_qval0.05.csv
+  real_target_pvalues: REPLACE_WITH_FULL_COVARIATE_REAL_TARGET_PVALUE_FILE_OR_DIRECTORY
+  ntc_pseudotarget_pvalues: REPLACE_WITH_FULL_COVARIATE_MATCHED_NTC_PVALUE_FILE_OR_DIRECTORY
+  replicate_effects: /oak/stanford/groups/engreitz/Users/tri/CodeBase/programDE/notebooks/iPSC_EC_QQ_full_covariates_with_replicate_correlation_bundle/results/ipsc_ec_qq_exports_full_covariates/k_50.dt_0_2/biological_replicate_effects/plots/biological_replicate_DE_program_effect_pairs.csv
 
 sceptre:
   on_target_results: REPLACE_WITH_COMBINED_TARGET_KD_RESULTS
 
 cnmf:
+  # Expected columns include K plus stability, reconstruction error,
+  # explained variance, and GO/gene-set enrichment.
   k_selection_metrics: REPLACE_WITH_CNMF_K_SELECTION_METRICS
 
 multiome:
@@ -43,6 +47,12 @@ multiome:
   enhancer_enrichment_results: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/2.tf_enrichment_in_programs/enhancer_enrichment_results.tsv
   modisco_compiled_h5: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/results/compendium/modisco_compiled/modisco_compiled.h5
   cluster_motif_map: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/0.0.motif_id_annotation/tables/cluster_to_tf_motif_id_mapping.tsv
+  # Fallback inputs used by the original program-annotation notebook when the
+  # consolidated long table above is unavailable.
+  motif_fdr_template: /oak/stanford/groups/engreitz/Users/ogrokhov/experiments/ec_sce2g/tfmn/results_0604/gene_TF_df_top300_genes_fdr_d{day}.txt
+  motif_score_template:
+  motif_name_map: /oak/stanford/groups/engreitz/Users/mattei/Git/motif-clustering/resources/65NR_motif_names.txt
+  motif_logo_dir: /oak/stanford/groups/engreitz/Users/mattei/Git/motif-clustering/output/405_final_motifs/logos
 
 benchmark:
   hipsc_pilot_anndata: REPLACE_WITH_HIPSC_CC_VS_CROP_ANNDATA
