@@ -1,0 +1,66 @@
+# Copy this file to config/paths.local.yaml on Sherlock.
+# config/paths.local.yaml should remain untracked.
+
+outputs:
+  root: ${SCRATCH}/cc_perturbseq_manuscript_figures
+
+screen:
+  genomewide_mageck_pos_vs_neg: /oak/stanford/groups/engreitz/Users/dulguun/230916_Genome-wide_Screen_Analysis/full_result_files_from_Chad/Pos_vs_Neg/Pos_vs_Neg.gene_summary.txt
+  genomewide_utest_pos_vs_neg: /oak/stanford/groups/engreitz/Users/dulguun/230916_Genome-wide_Screen_Analysis/full_result_files_from_Chad/Pos_vs_Neg/combined_utest_P1P2_adj_test.txt
+  validation_summary: /oak/stanford/groups/engreitz/Users/dulguun/231023_Validation_Screen_Files/d3pos_d3neg_mageckLFC.csv
+  validation_gene_types: /oak/stanford/groups/engreitz/Users/dulguun/231023_Validation_Screen_Files/validation_genes_type.xlsx
+  validation_hit_summary: /oak/stanford/groups/engreitz/Users/dulguun/231023_Validation_Screen_Files/ec_screen_hits.csv
+
+ccperturbseq:
+  integrated_anndata: REPLACE_WITH_FINAL_INTEGRATED_H5AD
+  d3_anndata: REPLACE_WITH_FINAL_D3_H5AD
+  guide_assignment: REPLACE_WITH_FINAL_SCEPTRE_GUIDE_ASSIGNMENT
+  cnmf_usage: REPLACE_WITH_FINAL_K50_USAGE
+  cnmf_spectra: REPLACE_WITH_FINAL_K50_SPECTRA
+  program_annotations: REPLACE_WITH_FINAL_PROGRAM_ANNOTATION_TABLE
+  target_metadata: REPLACE_WITH_TARGET_METADATA
+  ec_fraction_table: REPLACE_WITH_FINAL_GUIDE_LEVEL_EC_PERCENTAGE_TABLE
+  preprocessing_qc: REPLACE_WITH_QC_INPUT_DIRECTORY_OR_TABLE
+
+programde:
+  effect_matrix_all_days: REPLACE_WITH_FINAL_PROGRAM_EFFECT_MATRIX
+  qvalue_matrix_all_days: REPLACE_WITH_FINAL_PROGRAM_QVALUE_MATRIX
+  real_target_pvalues: REPLACE_WITH_FINAL_REAL_TARGET_CRT_PVALUES
+  ntc_pseudotarget_pvalues: REPLACE_WITH_FINAL_NTC_PSEUDOTARGET_PVALUES
+  replicate_effects: REPLACE_WITH_FINAL_REPLICATE_EFFECT_TABLE
+
+sceptre:
+  on_target_results: REPLACE_WITH_COMBINED_TARGET_KD_RESULTS
+
+cnmf:
+  k_selection_metrics: REPLACE_WITH_CNMF_K_SELECTION_METRICS
+
+multiome:
+  qc_tables: REPLACE_WITH_MULTIOME_QC_TABLES
+  tss_profiles: REPLACE_WITH_TSS_PROFILE_TABLE
+  chrombpnet_performance: REPLACE_WITH_CHROMBPNET_PERFORMANCE_TABLE
+  motif_qc: REPLACE_WITH_MOTIF_QC_TABLE
+  enhancer_enrichment_results: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/2.tf_enrichment_in_programs/enhancer_enrichment_results.tsv
+  modisco_compiled_h5: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/results/compendium/modisco_compiled/modisco_compiled.h5
+  cluster_motif_map: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/0.0.motif_id_annotation/tables/cluster_to_tf_motif_id_mapping.tsv
+
+benchmark:
+  hipsc_pilot_anndata: REPLACE_WITH_HIPSC_CC_VS_CROP_ANNDATA
+  hipsc_downsampling: REPLACE_WITH_HIPSC_DOWNSAMPLING_TABLE
+  hipsc_knockdown: REPLACE_WITH_HIPSC_PILOT_KNOCKDOWN_TABLE
+  telohaec_pilot_anndata: REPLACE_WITH_TELOHAEC_CC_VS_CROP_ANNDATA
+  parse_v3_anndata: REPLACE_WITH_PARSE_V3_ANNDATA
+  parse_v3_guide_counts: REPLACE_WITH_PARSE_V3_GUIDE_COUNTS
+  parse_v3_downsampling: REPLACE_WITH_PARSE_V3_DOWNSAMPLING_TABLE
+
+reference:
+  gencode_v43_gtf: /oak/stanford/groups/engreitz/Users/tri/tmp/gencode.v43.annotation.gtf.gz
+
+assets:
+  figure1a_schematic: REPLACE_WITH_EDITABLE_FIGURE_1A_SOURCE
+  figure2c_schematic: REPLACE_WITH_EDITABLE_FIGURE_2C_SOURCE
+  s1a_genomewide_facs: REPLACE_WITH_FCS_FLOWJO_OR_VECTOR_SOURCE
+  s1b_validation_facs: REPLACE_WITH_FCS_FLOWJO_OR_VECTOR_SOURCE
+  s2a_ccperturbseq_schematic: REPLACE_WITH_EDITABLE_S2A_SOURCE
+  s5g_motif_schematic: REPLACE_WITH_EDITABLE_S5G_SOURCE
+  s8a_bmp_schematic: REPLACE_WITH_EDITABLE_S8A_SOURCE
