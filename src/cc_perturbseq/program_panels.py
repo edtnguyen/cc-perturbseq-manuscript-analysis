@@ -8,3 +8,4 @@ from .focused_panels import *
 from .qc_panels import *
 from .benchmark_panels import *
 from .multiome_panels import *
+from .panel_adapters import *
