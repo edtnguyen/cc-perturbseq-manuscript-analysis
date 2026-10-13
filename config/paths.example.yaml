@@ -12,15 +12,15 @@ screen:
   validation_hit_summary: /oak/stanford/groups/engreitz/Users/dulguun/231023_Validation_Screen_Files/ec_screen_hits.csv
 
 ccperturbseq:
-  integrated_anndata: REPLACE_WITH_FINAL_INTEGRATED_H5AD
+  integrated_anndata: /oak/stanford/groups/engreitz/Users/opushkar/cc_perturb/2.preprocessing_tonys_pipeline/3.integrated_days/3.all_days_concat_pc30_all_genes_sceptre_guides.h5ad
   d3_anndata: REPLACE_WITH_FINAL_D3_H5AD
-  guide_assignment: REPLACE_WITH_FINAL_SCEPTRE_GUIDE_ASSIGNMENT
-  cnmf_usage: REPLACE_WITH_FINAL_K50_USAGE_TSV_OR_H5AD
+  guide_assignment: EMBEDDED_IN_INTEGRATED_ANNDATA_OBSM_GUIDE_ASSIGNMENT
+  cnmf_usage: /oak/stanford/groups/engreitz/Users/ymo/IGVF_ccperturbseq/Result/030526_100k_cells_100iter_allHVG_torch_halsvar_batch_e7_50/030526_100k_cells_100iter_allHVG_torch_halsvar_batch_e7_50.usages.k_50.dt_0_2.consensus.txt
   cnmf_spectra: /oak/stanford/groups/engreitz/Users/ymo/ipsc_ec/cnmf_output/ipsc-ec/ipsc-ec.spectra.k_50.dt_2_0.txt
   program_annotations: REPLACE_WITH_FINAL_PROGRAM_ANNOTATION_TABLE
-  target_metadata: REPLACE_WITH_TARGET_METADATA
-  ec_fraction_table: REPLACE_WITH_FINAL_GUIDE_OR_GENE_LEVEL_EC_EFFECT_TABLE
-  preprocessing_qc: REPLACE_WITH_QC_INPUT_DIRECTORY_OR_TABLE
+  target_metadata: /oak/stanford/groups/engreitz/Users/tri/CodeBase/programDE/notebooks/300genes_guide_metadata_v43.tsv
+  ec_fraction_table: REPLACE_WITH_FINAL_GUIDE_LEVEL_EC_PERCENTAGE_AND_FDR_TABLE
+  preprocessing_qc: REPLACE_WITH_QC_BUNDLE_DIRECTORY_OR_H5AD
 
 programde:
   # Source notebook: program_level_temporal_map_notebooks/02_gene_program_effect_temporal_heatmap.ipynb
@@ -47,8 +47,6 @@ multiome:
   enhancer_enrichment_results: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/2.tf_enrichment_in_programs/enhancer_enrichment_results.tsv
   modisco_compiled_h5: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/results/compendium/modisco_compiled/modisco_compiled.h5
   cluster_motif_map: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/0.0.motif_id_annotation/tables/cluster_to_tf_motif_id_mapping.tsv
-  # Fallback inputs used by the original program-annotation notebook when the
-  # consolidated long table above is unavailable.
   motif_fdr_template: /oak/stanford/groups/engreitz/Users/ogrokhov/experiments/ec_sce2g/tfmn/results_0604/gene_TF_df_top300_genes_fdr_d{day}.txt
   motif_score_template:
   motif_name_map: /oak/stanford/groups/engreitz/Users/mattei/Git/motif-clustering/resources/65NR_motif_names.txt
