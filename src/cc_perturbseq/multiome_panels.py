@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -116,7 +117,8 @@ def plot_chrombpnet_performance(table: pd.DataFrame):
         axis.set_xticks(range(len(days)), days)
         axis.set_ylabel(label, fontsize=7)
         axis.tick_params(labelsize=6)
-    return fig_scatter, fig_summary, pd.concat(scatter_source, ignore_index=True), summary
+    scatter = pd.concat(scatter_source, ignore_index=True) if scatter_source else pd.DataFrame()
+    return fig_scatter, fig_summary, scatter, summary
 
 
 def standardize_motif_qc(path: str | Path) -> pd.DataFrame:
@@ -192,10 +194,13 @@ def _motif_heatmap(table: pd.DataFrame, day: str, programs: list[int]):
 def plot_selected_motif_enrichment(table: pd.DataFrame):
     panels = [("D2", [15, 17]), ("D3", [2, 24, 27, 34])]
     matrices = [_motif_heatmap(table, day, programs) for day, programs in panels]
-    vmax_values = np.concatenate([matrix.to_numpy().ravel() for matrix, _ in matrices if matrix.size])
+    nonempty = [matrix for matrix, _ in matrices if matrix.size]
+    vmax_values = np.concatenate([matrix.to_numpy().ravel() for matrix in nonempty]) if nonempty else np.array([1.0])
     vmax = max(1.0, float(np.nanpercentile(vmax_values[vmax_values > 0], 99))) if np.any(vmax_values > 0) else 1.0
-    fig, axes = plt.subplots(1, 2, figsize=(8.8, max(4.2, 0.22 * max(len(matrix) for matrix, _ in matrices))), constrained_layout=True)
+    max_rows = max([len(matrix) for matrix, _ in matrices] or [1])
+    fig, axes = plt.subplots(1, 2, figsize=(8.8, max(4.2, 0.22 * max_rows)), constrained_layout=True)
     source: dict[str, pd.DataFrame] = {}
+    image = None
     for axis, (day, programs), (values, qvalues) in zip(axes, panels, matrices):
         image = axis.imshow(values, cmap="Blues", norm=Normalize(0, vmax), aspect="auto")
         axis.set_xticks(np.arange(len(programs)), [f"P{program}" for program in programs], fontsize=7)
@@ -208,5 +213,6 @@ def plot_selected_motif_enrichment(table: pd.DataFrame):
                     axis.text(column, row, star, ha="center", va="center", fontsize=5)
         source[f"{day}_values"] = values
         source[f"{day}_qvalues"] = qvalues
-    fig.colorbar(image, ax=axes, fraction=0.025, pad=0.02, label="−log₁₀(q-value)")
+    if image is not None:
+        fig.colorbar(image, ax=axes, fraction=0.025, pad=0.02, label="−log₁₀(q-value)")
     return fig, source
