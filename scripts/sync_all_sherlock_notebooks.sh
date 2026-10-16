@@ -240,7 +240,9 @@ done < <(find "$dest_abs" -type f -name '*.ipynb' -print0)
   exit 5
 }
 
-lfs_count=$(git lfs ls-files --cached | awk -v prefix="$dest_rel/" 'index($0, prefix) {n++} END {print n+0}')
+# `git lfs ls-files --cached` is unavailable in some Git LFS releases.
+# The base command already reports LFS files from the index and working tree.
+lfs_count=$(git lfs ls-files | awk -v prefix="$dest_rel/" 'index($0, prefix) {n++} END {print n+0}')
 if (( lfs_count < notebook_count )); then
   echo "Warning: $notebook_count source notebooks were inventoried, but $lfs_count archive paths are currently listed by Git LFS." >&2
   echo "This can occur when overlapping source roots map to existing identical paths; inspect $manifest_rel before pushing." >&2
