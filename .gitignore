@@ -1,5 +1,6 @@
 # Local machine/Sherlock configuration
 config/paths.local.yaml
+config/sherlock_notebook_roots.local.txt
 
 # Notebook state
 .ipynb_checkpoints/
