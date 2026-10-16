@@ -2,46 +2,32 @@ from __future__ import annotations
 
 from pathlib import Path
 import hashlib
+import re
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-
-def sha256_file(path: str | Path) -> str:
-    path = Path(path)
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def _save_figure(fig, outdir: Path, stem: str) -> dict[str, str]:
-    outputs: dict[str, str] = {}
-    for suffix in ("pdf", "svg", "png"):
-        path = outdir / f"{stem}.{suffix}"
-        fig.savefig(
-            path,
-            dpi=600 if suffix == "png" else None,
-            bbox_inches="tight",
-            pad_inches=0.03,
-            facecolor="white",
-        )
-        outputs[suffix] = str(path)
-    return outputs
+from scipy.optimize import brentq
+from scipy.stats import ttest_ind
 
 
 # -----------------------------------------------------------------------------
-# Figure 1c: validation screen guide-level EC percentages
-# Source: validation_boxplots_verified bundle
+# Figure 1c: validation-screen guide-level Day 3 EC percentages
+#
+# The plot is rebuilt from Chloe McCreery's validation-screen guide-count table:
+#   /oak/stanford/groups/engreitz/Users/chloemc/GenomeWideValidation/
+#   MageckAnalysis/mageck_sgRNA_readcount.txt
+#
+# For each biological replicate, guide enrichment in the CDH5-positive versus
+# CDH5-negative fraction is converted to a relative log2 odds shift. The shift
+# is centered so that the arithmetic mean reconstructed EC percentage across
+# the 120 control guides is 70%. Replicate-specific EC percentages are averaged
+# per guide. Each target gene is compared with the 120 control guides using a
+# two-sided Welch t-test; P values are BH-adjusted across all 297 target genes.
 # -----------------------------------------------------------------------------
 
 PANEL_C_VALUE_COL = "estimated_EC_pct_control70"
-PANEL_C_EXPECTED_SHA256 = (
-    "e4d79dce678bde0a84dcaf6927573c24003f362aae3a02d11d4670a2516a5c1e"
-)
 PANEL_C_CONTROL_TYPES = {"NON-TARGETING", "SAFE"}
 PANEL_C_GROUPS = [
     ("Control", ["NTC"]),
@@ -57,6 +43,22 @@ PANEL_C_GROUP_LABELS = {
     "EC + LM regulators": "EC + LM\nregulators",
     "Hippo pathway": "Hippo\npathway",
 }
+PANEL_C_GROUP_COLORS = {
+    "Control": "white",
+    "BMP/TGFβ pathway": "#7A43A2",
+    "Mesoderm regulators": "#D97A34",
+    "EC + LM regulators": "#059C48",
+    "Hippo pathway": "#ED4A97",
+}
+
+
+def sha256_file(path: str | Path) -> str:
+    path = Path(path)
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def panel_c_bh_adjust(pvalues: np.ndarray) -> np.ndarray:
@@ -74,139 +76,255 @@ def panel_c_stars(q: float) -> str:
     return "***" if q < 0.001 else "**" if q < 0.01 else "*" if q < 0.05 else ""
 
 
-def read_panel_c_guides(path: str | Path):
+def _read_count_table(path: str | Path) -> pd.DataFrame:
     path = Path(path)
-    table = pd.read_csv(path)
-    required = {"guide_id", "target_gene", "guide_type", PANEL_C_VALUE_COL}
-    if missing := required.difference(table.columns):
-        raise ValueError(f"Missing validation-table columns: {sorted(missing)}")
-    if table["guide_id"].isna().any() or table["guide_id"].duplicated().any():
-        raise ValueError("Guide IDs must be nonempty and unique.")
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    if path.suffix.lower() == ".csv":
+        table = pd.read_csv(path)
+    else:
+        try:
+            table = pd.read_csv(path, sep="\t")
+        except Exception:
+            table = pd.read_csv(path, sep=None, engine="python")
+    table.columns = [str(column).strip() for column in table.columns]
+    return table
 
-    table = table.copy()
-    table["guide_id"] = table["guide_id"].astype(str).str.strip()
-    table["target_gene"] = table["target_gene"].astype(str).str.strip().str.upper()
-    table["guide_type"] = table["guide_type"].astype(str).str.strip().str.upper()
-    table[PANEL_C_VALUE_COL] = pd.to_numeric(
-        table[PANEL_C_VALUE_COL], errors="coerce"
+
+def _infer_column(table: pd.DataFrame, candidates: list[str]) -> str:
+    normalized = {str(column).strip().lower(): str(column) for column in table.columns}
+    for candidate in candidates:
+        if candidate.lower() in normalized:
+            return normalized[candidate.lower()]
+    raise ValueError(
+        f"Could not identify any of {candidates}. Available columns: {list(table.columns)}"
     )
-    if table[PANEL_C_VALUE_COL].isna().any():
-        raise ValueError("The verified input contains a nonfinite EC estimate.")
-    if not table[PANEL_C_VALUE_COL].between(0, 100).all():
-        raise ValueError("EC percentages must be in [0, 100].")
 
-    allowed = PANEL_C_CONTROL_TYPES | {"TARGETING"}
-    bad_types = sorted(set(table["guide_type"]).difference(allowed))
-    if bad_types:
-        raise ValueError(f"Unrecognized guide types: {bad_types}")
 
-    controls = table.loc[
-        table["guide_type"].isin(PANEL_C_CONTROL_TYPES)
-    ].sort_values("guide_id")
+def _guide_type(guide_id: str, target: str) -> str:
+    text = f"{guide_id} {target}".upper().replace("_", "-")
+    if re.search(r"NON[- ]?TARGET", text):
+        return "NON-TARGETING"
+    if re.search(r"SAFE[- ]?TARGET", text) or target.strip().upper() == "SAFE":
+        return "SAFE"
+    return "TARGETING"
+
+
+def load_validation_screen_counts(path: str | Path) -> pd.DataFrame:
+    """Load and validate Chloe's validation-screen guide-count table."""
+    raw = _read_count_table(path)
+    guide_col = _infer_column(raw, ["sgRNA", "guide", "guide_id", "grna"])
+    target_col = _infer_column(raw, ["Gene", "target", "target_gene", "gene_symbol"])
+    required_counts = [
+        "D3PR1", "D3PR2", "D0R1", "D0R2",
+        "D3NR1", "D3NR2", "D3TOTAL1", "D3TOTAL2",
+    ]
+    missing = [column for column in required_counts if column not in raw.columns]
+    if missing:
+        raise ValueError(
+            "Validation-screen count table is missing required columns: "
+            + ", ".join(missing)
+        )
+
+    table = pd.DataFrame(
+        {
+            "guide_id": raw[guide_col].astype(str).str.strip(),
+            "target_gene": raw[target_col].astype(str).str.strip(),
+        }
+    )
+    for column in required_counts:
+        table[column] = pd.to_numeric(raw[column], errors="coerce")
+    if table["guide_id"].eq("").any() or table["guide_id"].duplicated().any():
+        raise ValueError("Guide identifiers must be nonempty and unique.")
+    if table[required_counts].isna().any().any():
+        bad = int(table[required_counts].isna().sum().sum())
+        raise ValueError(f"Guide-count table contains {bad} nonnumeric count values.")
+    if (table[required_counts] < 0).any().any():
+        raise ValueError("Guide counts must be nonnegative.")
+
+    table["guide_type"] = [
+        _guide_type(guide, target)
+        for guide, target in zip(table["guide_id"], table["target_gene"])
+    ]
+    table.loc[table["guide_type"].eq("NON-TARGETING"), "target_gene"] = "NON-TARGETING"
+    table.loc[table["guide_type"].eq("SAFE"), "target_gene"] = "SAFE"
+    table.loc[table["guide_type"].eq("TARGETING"), "target_gene"] = (
+        table.loc[table["guide_type"].eq("TARGETING"), "target_gene"]
+        .astype(str).str.strip().str.upper()
+    )
+
+    counts_by_type = table["guide_type"].value_counts().to_dict()
+    expected = {"TARGETING": 1806, "NON-TARGETING": 60, "SAFE": 60}
+    if counts_by_type != expected:
+        raise ValueError(
+            f"Unexpected guide-type counts: {counts_by_type}; expected {expected}."
+        )
+    n_genes = table.loc[table["guide_type"].eq("TARGETING"), "target_gene"].nunique()
+    if n_genes != 297:
+        raise ValueError(f"Expected 297 targeting genes; found {n_genes}.")
+    return table
+
+
+def _ec_probability_from_log2_odds(log2_odds: np.ndarray) -> np.ndarray:
+    odds = np.exp2(np.asarray(log2_odds, dtype=float))
+    return odds / (1.0 + odds)
+
+
+def _calibrate_replicate_to_control_mean(
+    raw_log2_positive_over_negative: np.ndarray,
+    control_mask: np.ndarray,
+    baseline_fraction: float,
+) -> tuple[np.ndarray, float]:
+    if not 0 < baseline_fraction < 1:
+        raise ValueError("The control baseline fraction must lie strictly between 0 and 1.")
+    baseline_log2_odds = np.log2(baseline_fraction / (1.0 - baseline_fraction))
+
+    def objective(offset: float) -> float:
+        probabilities = _ec_probability_from_log2_odds(
+            baseline_log2_odds + raw_log2_positive_over_negative - offset
+        )
+        return float(probabilities[control_mask].mean() - baseline_fraction)
+
+    offset = float(brentq(objective, -100.0, 100.0))
+    centered_log2_odds = raw_log2_positive_over_negative - offset
+    reconstructed = _ec_probability_from_log2_odds(
+        baseline_log2_odds + centered_log2_odds
+    )
+    return reconstructed, offset
+
+
+def reconstruct_validation_guide_ec_percentages(
+    count_table: pd.DataFrame,
+    *,
+    control_baseline_pct: float = 70.0,
+    pseudocount: float = 0.5,
+) -> tuple[pd.DataFrame, dict[str, float]]:
+    """Reconstruct guide-level EC percentages from D3 positive/negative counts."""
+    if pseudocount <= 0:
+        raise ValueError("pseudocount must be positive.")
+    baseline_fraction = float(control_baseline_pct) / 100.0
+    control_mask = count_table["guide_type"].isin(PANEL_C_CONTROL_TYPES).to_numpy()
+    if int(control_mask.sum()) != 120:
+        raise ValueError(f"Expected 120 controls; found {int(control_mask.sum())}.")
+
+    output = count_table.copy()
+    offsets: dict[str, float] = {}
+    for replicate in (1, 2):
+        positive = output[f"D3PR{replicate}"].to_numpy(float)
+        negative = output[f"D3NR{replicate}"].to_numpy(float)
+        raw_log2_odds = np.log2(
+            (positive + pseudocount) / (negative + pseudocount)
+        )
+        reconstructed, offset = _calibrate_replicate_to_control_mean(
+            raw_log2_odds,
+            control_mask,
+            baseline_fraction,
+        )
+        output[f"log2_odds_vs_control_R{replicate}"] = raw_log2_odds - offset
+        output[f"estimated_EC_pct_R{replicate}_control70"] = 100.0 * reconstructed
+        offsets[f"replicate_{replicate}_log2_odds_offset"] = offset
+
+    output[PANEL_C_VALUE_COL] = output[
+        ["estimated_EC_pct_R1_control70", "estimated_EC_pct_R2_control70"]
+    ].mean(axis=1)
+    output["EC_change_vs_control_percentage_points"] = (
+        output[PANEL_C_VALUE_COL] - control_baseline_pct
+    )
+    output["replicate_absolute_difference_percentage_points"] = (
+        output["estimated_EC_pct_R1_control70"]
+        - output["estimated_EC_pct_R2_control70"]
+    ).abs()
+    delta_1 = output["estimated_EC_pct_R1_control70"] - control_baseline_pct
+    delta_2 = output["estimated_EC_pct_R2_control70"] - control_baseline_pct
+    output["replicate_direction_concordant"] = (delta_1 * delta_2) > 0
+    output["replicate_difference_gt20pp"] = (
+        output["replicate_absolute_difference_percentage_points"] > 20
+    )
+    output["low_D3_representation_lt100_in_either_rep"] = (
+        output[["D3TOTAL1", "D3TOTAL2"]].min(axis=1) < 100
+    )
+    output["low_D0_representation_lt20_in_either_rep"] = (
+        output[["D0R1", "D0R2"]].min(axis=1) < 20
+    )
+
+    controls = output.loc[control_mask]
+    for replicate in (1, 2):
+        value = float(controls[f"estimated_EC_pct_R{replicate}_control70"].mean())
+        if not np.isclose(value, control_baseline_pct, atol=1e-10, rtol=0):
+            raise AssertionError(
+                f"Replicate {replicate} control mean is {value}, not {control_baseline_pct}."
+            )
+    if not np.isclose(
+        controls[PANEL_C_VALUE_COL].mean(), control_baseline_pct, atol=1e-10, rtol=0
+    ):
+        raise AssertionError("Combined control-guide EC mean does not equal the baseline.")
+    return output, offsets
+
+
+def split_panel_c_guides(table: pd.DataFrame):
+    controls = table.loc[table["guide_type"].isin(PANEL_C_CONTROL_TYPES)].copy()
     targeting = {
         gene: group.sort_values("guide_id").copy()
-        for gene, group in table.loc[
-            table["guide_type"].eq("TARGETING")
-        ].groupby("target_gene", sort=True)
+        for gene, group in table.loc[table["guide_type"].eq("TARGETING")].groupby(
+            "target_gene", sort=True
+        )
     }
     for _, genes in PANEL_C_GROUPS[1:]:
         for gene in genes:
             if gene not in targeting:
                 raise ValueError(f"Requested Figure 1c gene is missing: {gene}")
-    return table, controls.copy(), targeting
+    return controls.sort_values("guide_id"), targeting
 
 
-def panel_c_uniform_subsets(
-    n_control: int,
-    n_target: int,
-    permutations: int,
-    seed: int,
-) -> np.ndarray:
-    total = n_control + n_target
-    rng = np.random.default_rng(np.random.SeedSequence([seed, n_control, n_target]))
-    dtype = np.uint16 if total < 65536 else np.uint32
-    output = np.empty((permutations, n_target), dtype=dtype)
-    for lo in range(0, permutations, 5000):
-        hi = min(lo + 5000, permutations)
-        keys = rng.random((hi - lo, total))
-        chosen = np.argpartition(keys, n_target - 1, axis=1)[:, :n_target]
-        chosen.sort(axis=1)
-        output[lo:hi] = chosen
-    return output
-
-
-def compute_panel_c_statistics(
+def compute_panel_c_welch_statistics(
     controls: pd.DataFrame,
     targeting: dict[str, pd.DataFrame],
-    outdir: str | Path,
-    *,
-    permutations: int = 100_000,
-    seed: int = 20260908,
 ) -> pd.DataFrame:
-    outdir = Path(outdir)
-    outdir.mkdir(parents=True, exist_ok=True)
+    """Run two-sided Welch t-tests and BH correction across all target genes."""
     control_values = controls[PANEL_C_VALUE_COL].to_numpy(float)
     control_mean = float(control_values.mean())
-    subset_cache = {
-        n: panel_c_uniform_subsets(len(control_values), n, permutations, seed)
-        for n in sorted({len(group) for group in targeting.values()})
-    }
-    np.savez_compressed(
-        outdir / "permutation_indices_100k.npz",
-        **{f"n_target_{n}": indices for n, indices in subset_cache.items()},
-    )
-
-    rows = []
+    rows: list[dict[str, object]] = []
     for gene, group in targeting.items():
         target_values = group[PANEL_C_VALUE_COL].to_numpy(float)
-        n_target = len(target_values)
+        result = ttest_ind(
+            target_values,
+            control_values,
+            equal_var=False,
+            nan_policy="raise",
+        )
+        pvalue = float(result.pvalue)
+        if not np.isfinite(pvalue):
+            raise ValueError(f"Welch t-test returned a nonfinite P value for {gene}.")
         target_mean = float(target_values.mean())
-        observed = target_mean - control_mean
-        pooled = np.concatenate([target_values, control_values])
-        centered = pooled - pooled.mean(dtype=np.float64)
-        centered_total = centered.sum(dtype=np.float64)
-        tolerance = 100 * np.finfo(float).eps * max(1.0, abs(observed))
-        extreme = 0
-        indices = subset_cache[n_target]
-        for lo in range(0, permutations, 10_000):
-            chunk = indices[lo : lo + 10_000]
-            selected_sum = centered[chunk].sum(axis=1, dtype=np.float64)
-            permuted = selected_sum / n_target - (
-                centered_total - selected_sum
-            ) / len(control_values)
-            extreme += int(
-                np.count_nonzero(np.abs(permuted) >= abs(observed) - tolerance)
-            )
         rows.append(
             {
                 "gene": gene,
-                "n_targeting_guides": n_target,
+                "n_targeting_guides": len(target_values),
                 "n_control_guides": len(control_values),
                 "mean_target_EC_pct": target_mean,
                 "median_target_EC_pct": float(np.median(target_values)),
+                "sd_target_EC_pct": float(np.std(target_values, ddof=1)),
                 "mean_control_EC_pct": control_mean,
-                "observed_difference_target_minus_control_pp": observed,
-                "effect_log2_control_over_target": float(
-                    np.log2(control_mean / target_mean)
+                "median_control_EC_pct": float(np.median(control_values)),
+                "sd_control_EC_pct": float(np.std(control_values, ddof=1)),
+                "difference_target_minus_control_pp": target_mean - control_mean,
+                "effect_log2_target_over_control": float(
+                    np.log2(target_mean / control_mean)
                 ),
-                "n_extreme_permutations": extreme,
-                "n_permutations": permutations,
-                "permutation_pvalue_two_sided_b_over_B": extreme / permutations,
-                "permutation_pvalue_plus_one_sensitivity": (extreme + 1)
-                / (permutations + 1),
-                "seed": seed,
+                "welch_t_statistic": float(result.statistic),
+                "welch_pvalue_two_sided": pvalue,
             }
         )
 
-    stats = pd.DataFrame(rows)
+    stats = pd.DataFrame(rows).sort_values("gene").reset_index(drop=True)
+    if len(stats) != 297:
+        raise ValueError(f"Expected 297 target-gene tests; found {len(stats)}.")
     stats["FDR_BH"] = panel_c_bh_adjust(
-        stats["permutation_pvalue_two_sided_b_over_B"].to_numpy()
-    )
-    stats["FDR_BH_plus_one_sensitivity"] = panel_c_bh_adjust(
-        stats["permutation_pvalue_plus_one_sensitivity"].to_numpy()
+        stats["welch_pvalue_two_sided"].to_numpy()
     )
     stats["significance"] = stats["FDR_BH"].map(panel_c_stars)
     stats["BH_number_genes"] = len(stats)
+    stats["test"] = "two-sided Welch t-test"
     return stats
 
 
@@ -214,6 +332,8 @@ def plot_panel_c(
     controls: pd.DataFrame,
     targeting: dict[str, pd.DataFrame],
     stats: pd.DataFrame,
+    *,
+    control_baseline_pct: float = 70.0,
 ):
     mpl.rcParams.update(
         {
@@ -232,6 +352,11 @@ def plot_panel_c(
     positions: list[float] = []
     spans: list[tuple[str, float, float]] = []
     names: list[str] = []
+    group_by_gene: dict[str, str] = {"NTC": "Control"}
+    for group_name, genes in PANEL_C_GROUPS[1:]:
+        for gene in genes:
+            group_by_gene[gene] = group_name
+
     jitter_rows: list[dict[str, object]] = []
     x = 0.0
     for group_name, genes in PANEL_C_GROUPS:
@@ -257,7 +382,7 @@ def plot_panel_c(
         [left / fig_w, bottom / fig_h, ax_width / fig_w, ax_height / fig_h]
     )
     ax.axhline(
-        np.mean(datasets[0]),
+        control_baseline_pct,
         color="#9EA3A8",
         linestyle="--",
         linewidth=1.6,
@@ -277,7 +402,8 @@ def plot_panel_c(
         boxprops={"edgecolor": "black", "linewidth": 1.8, "zorder": 3},
     )
     for box, gene in zip(boxplot["boxes"], names):
-        box.set_facecolor("white" if gene == "NTC" else "#E3B51E")
+        box.set_facecolor(PANEL_C_GROUP_COLORS[group_by_gene[gene]])
+        box.set_alpha(0.86 if gene != "NTC" else 1.0)
 
     for gene, position, values in zip(names, positions, datasets):
         digest = int.from_bytes(hashlib.sha256(gene.encode()).digest()[:4], "little")
@@ -310,7 +436,7 @@ def plot_panel_c(
                 }
             )
         if gene != "NTC":
-            annotation = stats_index.loc[gene, "significance"]
+            annotation = str(stats_index.loc[gene, "significance"])
             if annotation:
                 ax.text(
                     position,
@@ -368,7 +494,7 @@ def plot_panel_c(
     fig.text(
         left / fig_w,
         (bottom + ax_height + 0.24) / fig_h,
-        "100,000 two-sided guide-label permutations; BH correction across all tested genes",
+        "Two-sided Welch t-test; BH correction across all 297 target genes",
         ha="left",
         va="bottom",
         fontsize=9.5,
@@ -384,48 +510,74 @@ def plot_panel_c(
     return fig, pd.DataFrame(jitter_rows)
 
 
+def _save_figure(fig, outdir: Path, stem: str) -> dict[str, str]:
+    outputs: dict[str, str] = {}
+    for suffix in ("pdf", "svg", "png"):
+        path = outdir / f"{stem}.{suffix}"
+        fig.savefig(
+            path,
+            dpi=600 if suffix == "png" else None,
+            bbox_inches="tight",
+            pad_inches=0.03,
+            facecolor="white",
+        )
+        outputs[suffix] = str(path)
+    return outputs
+
+
 def run_figure_01c(
-    validation_path: str | Path,
+    validation_count_path: str | Path,
     outdir: str | Path,
     *,
-    verify_hash: bool = True,
-    permutations: int = 100_000,
-    seed: int = 20260908,
+    control_baseline_pct: float = 70.0,
+    pseudocount: float = 0.5,
 ):
-    validation_path = Path(validation_path)
+    """Recalculate Figure 1c from Chloe's validation-screen count table."""
+    validation_count_path = Path(validation_count_path)
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-    actual_hash = sha256_file(validation_path)
-    if verify_hash and actual_hash != PANEL_C_EXPECTED_SHA256:
-        raise ValueError(
-            "Figure 1c input does not match the verified bundle. "
-            f"Expected {PANEL_C_EXPECTED_SHA256}, found {actual_hash}."
-        )
 
-    table, controls, targeting = read_panel_c_guides(validation_path)
-    if len(controls) != 120 or len(targeting) != 297:
-        raise ValueError(
-            "Expected 120 control guides and 297 target genes; "
-            f"found {len(controls)} and {len(targeting)}."
-        )
-    stats = compute_panel_c_statistics(
-        controls,
-        targeting,
-        outdir,
-        permutations=permutations,
-        seed=seed,
+    counts = load_validation_screen_counts(validation_count_path)
+    guide_table, offsets = reconstruct_validation_guide_ec_percentages(
+        counts,
+        control_baseline_pct=control_baseline_pct,
+        pseudocount=pseudocount,
     )
-    fig, jitter = plot_panel_c(controls, targeting, stats)
-    outputs = _save_figure(
-        fig, outdir, "Figure_01c_validation_boxplots_verified"
-    )
-
+    controls, targeting = split_panel_c_guides(guide_table)
+    stats = compute_panel_c_welch_statistics(controls, targeting)
     selected_genes = [gene for _, genes in PANEL_C_GROUPS[1:] for gene in genes]
     selected_stats = stats.set_index("gene").loc[selected_genes].reset_index()
-    stats.to_csv(outdir / "permutation_statistics_all_297_genes.csv", index=False)
-    selected_stats.to_csv(
-        outdir / "permutation_statistics_plotted_genes.csv", index=False
+
+    fig, jitter = plot_panel_c(
+        controls,
+        targeting,
+        stats,
+        control_baseline_pct=control_baseline_pct,
     )
-    table.to_csv(outdir / "guide_values_used.csv", index=False)
-    jitter.to_csv(outdir / "plot_jitter_coordinates.csv", index=False)
-    return fig, stats, selected_stats, outputs, actual_hash
+    outputs = _save_figure(fig, outdir, "Figure_01c_validation_screen_EC_fraction")
+
+    guide_path = outdir / "Figure_01c_reconstructed_guide_EC_percentages.csv"
+    stats_path = outdir / "Figure_01c_Welch_statistics_all_297_genes.csv"
+    selected_path = outdir / "Figure_01c_Welch_statistics_plotted_genes.csv"
+    jitter_path = outdir / "Figure_01c_plot_jitter_coordinates.csv"
+    guide_table.to_csv(guide_path, index=False)
+    stats.to_csv(stats_path, index=False)
+    selected_stats.to_csv(selected_path, index=False)
+    jitter.to_csv(jitter_path, index=False)
+    outputs.update(
+        {
+            "guide_level_reconstruction": str(guide_path),
+            "all_gene_statistics": str(stats_path),
+            "plotted_gene_statistics": str(selected_path),
+            "jitter_coordinates": str(jitter_path),
+        }
+    )
+    return (
+        fig,
+        stats,
+        selected_stats,
+        guide_table,
+        outputs,
+        sha256_file(validation_count_path),
+        offsets,
+    )
