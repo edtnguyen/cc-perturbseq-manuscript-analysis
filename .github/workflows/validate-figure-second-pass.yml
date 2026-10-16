@@ -7,7 +7,9 @@ on:
     paths:
       - "src/cc_perturbseq/**"
       - "notebooks/**"
+      - "scripts/**"
       - "config/**"
+      - ".gitattributes"
       - ".github/workflows/validate-figure-second-pass.yml"
   workflow_dispatch:
 
@@ -19,6 +21,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Validate shell scripts
+        run: |
+          set -euo pipefail
+          find scripts -type f -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
       - name: Compile Python modules and notebook code cells
         run: |
           python - <<'PY'
