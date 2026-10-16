@@ -10,9 +10,8 @@ screen:
   validation_summary: /oak/stanford/groups/engreitz/Users/dulguun/231023_Validation_Screen_Files/d3pos_d3neg_mageckLFC.csv
   validation_gene_types: /oak/stanford/groups/engreitz/Users/dulguun/231023_Validation_Screen_Files/validation_genes_type.xlsx
   validation_hit_summary: /oak/stanford/groups/engreitz/Users/dulguun/231023_Validation_Screen_Files/ec_screen_hits.csv
-  # Figure 1c verified bundle. The notebook requires the exact full CSV with
-  # SHA-256 e4d79dce678bde0a84dcaf6927573c24003f362aae3a02d11d4670a2516a5c1e.
-  validation_guide_ec_percent: REPLACE_WITH_VERIFIED_GUIDE_EC_PERCENT_CONTROL70_CSV
+  # Figure 1c is recalculated directly from Chloe's raw guide-count table.
+  validation_guide_counts: /oak/stanford/groups/engreitz/Users/chloemc/GenomeWideValidation/MageckAnalysis/mageck_sgRNA_readcount.txt
 
 ccperturbseq:
   integrated_anndata: /oak/stanford/groups/engreitz/Users/opushkar/cc_perturb/2.preprocessing_tonys_pipeline/3.integrated_days/3.all_days_concat_pc30_all_genes_sceptre_guides.h5ad
