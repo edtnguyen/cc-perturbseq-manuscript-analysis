@@ -1,0 +1,65 @@
+name: Install Figure 2 payload
+
+on:
+  push:
+    branches:
+      - automation/figure2-payload
+    paths:
+      - ".figure2_payload/READY"
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: automation/figure2-payload
+          fetch-depth: 0
+
+      - name: Reconstruct and validate payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .figure2_payload/chunk_*.txt | tr -d '\r\n' | base64 --decode > /tmp/figure2_repo_payload.tar.gz
+          echo "6462c36dbde731bd317085c5edc0268e438c15bf512770d934fa75a1b85af619  /tmp/figure2_repo_payload.tar.gz" | sha256sum -c -
+          mkdir -p /tmp/figure2_repo_payload
+          tar -xzf /tmp/figure2_repo_payload.tar.gz -C /tmp/figure2_repo_payload
+          echo "34f926df5d853f06ec5de64492ce0debc48066bb39749cb516a7392543aa40f5  /tmp/figure2_repo_payload/data/figure_02/Figure_02_cNMF_plot_data.xlsx" | sha256sum -c -
+          python -m py_compile /tmp/figure2_repo_payload/src/cc_perturbseq/figure2_panels.py
+          python - <<'PY'
+          import ast
+          import json
+          from pathlib import Path
+
+          path = Path('/tmp/figure2_repo_payload/notebooks/main/Figure_02.ipynb')
+          notebook = json.loads(path.read_text())
+          assert notebook.get('nbformat') == 4
+          for index, cell in enumerate(notebook.get('cells', [])):
+              if cell.get('cell_type') == 'code':
+                  ast.parse(''.join(cell.get('source', [])), filename=f'{path}:cell-{index}')
+          print('Figure 2 payload validation passed.')
+          PY
+
+      - name: Commit payload to curation branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin curation/figure-reproduction-v1
+          git checkout -B curation/figure-reproduction-v1 origin/curation/figure-reproduction-v1
+          cp -a /tmp/figure2_repo_payload/. .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            data/figure_02/Figure_02_cNMF_plot_data.xlsx \
+            data/figure_02/README.md \
+            notebooks/main/Figure_02.ipynb \
+            src/cc_perturbseq/figure2_panels.py
+          if git diff --cached --quiet; then
+            echo "No Figure 2 changes to commit."
+            exit 0
+          fi
+          git commit -m "Rebuild Figure 2 panels from canonical inputs"
+          git push origin HEAD:curation/figure-reproduction-v1
