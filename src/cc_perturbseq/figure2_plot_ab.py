@@ -138,10 +138,16 @@ def plot_figure2b(selected_associations: pd.DataFrame, ec_stats: pd.DataFrame):
             ax.axhline(row_end - 0.5, color="white", linewidth=2.2)
         row_start = row_end
 
-    spans = [(0, 2, "Day 1"), (3, 5, "Day 2"), (6, 9, "Day 3 — EC"), (10, 12, "Non-EC"), (13, 13, "EC\ndifferentiation")]
-    for left, right, label in spans:
+    spans = [
+        (0, 2, "Day 1", -1.15, 8.5),
+        (3, 5, "Day 2", -1.15, 8.5),
+        (6, 9, "Day 3 — EC", -1.15, 8.5),
+        (10, 12, "Non-EC", -1.05, 8.0),
+        (13, 13, "EC\ndifferentiation", -1.72, 7.3),
+    ]
+    for left, right, label, y, fontsize in spans:
         center = (left + right) / 2
-        ax.text(center, -1.35, label, ha="center", va="bottom", fontsize=8.5, fontweight="bold")
+        ax.text(center, y, label, ha="center", va="bottom", fontsize=fontsize, fontweight="bold", linespacing=0.9)
         if right < values.shape[1] - 1:
             ax.axvline(right + 0.5, color="white", linewidth=2.2)
     ax.set_xlim(-0.5, values.shape[1] - 0.5)
