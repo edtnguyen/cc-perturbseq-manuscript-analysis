@@ -1,62 +1,111 @@
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
 import numpy as np
 import pandas as pd
+from plotnine import (
+    aes,
+    coord_fixed,
+    element_rect,
+    element_text,
+    facet_wrap,
+    geom_point,
+    ggplot,
+    scale_color_cmap,
+    theme,
+    theme_void,
+)
 
 from .single_cell_panels import expression_vector, program_vector
+
 
 def plot_figure2e_umaps(
     adata,
     usage: pd.DataFrame,
     *,
-    point_size: float = 1.0,
-    background_size: float = 0.25,
+    point_size: float = 0.42,
+    background_size: float = 0.18,
     vmax_quantile: float = 0.99,
 ):
+    """Render P17/P27 and SLC8A1/GATA4 UMAPs with plotnine and YlGnBu."""
     if "X_umap" not in adata.obsm:
         raise KeyError("AnnData lacks obsm['X_umap']")
     coords = np.asarray(adata.obsm["X_umap"])
-    features = [
-        ("program", 17, "P17", "Lat. mesoderm, YAP/TAZ-induced"),
-        ("gene", "SLC8A1", "SLC8A1", ""),
-        ("program", 27, "P27", "Mesenchyme, ECM"),
-        ("gene", "GATA4", "GATA4", ""),
+    specs = [
+        ("program", 17, "Programs\nP17\nLat. mesoderm, YAP/TAZ-induced"),
+        ("gene", "SLC8A1", "Markers\nSLC8A1"),
+        ("program", 27, "Programs\nP27\nMesenchyme, ECM"),
+        ("gene", "GATA4", "Markers\nGATA4"),
     ]
-    fig, axes = plt.subplots(2, 2, figsize=(5.7, 5.2))
-    fig.subplots_adjust(left=0.03, right=0.94, bottom=0.03, top=0.90, wspace=0.15, hspace=0.18)
+    feature_order = [label for _, _, label in specs]
+    background_frames: list[pd.DataFrame] = []
+    foreground_frames: list[pd.DataFrame] = []
     source: dict[str, pd.DataFrame] = {}
-    for axis, (kind, feature, title, subtitle) in zip(axes.ravel(), features):
-        values = program_vector(usage, feature) if kind == "program" else expression_vector(adata, str(feature))
+
+    for kind, feature, label in specs:
+        values = (
+            program_vector(usage, feature)
+            if kind == "program"
+            else expression_vector(adata, str(feature))
+        )
         values = np.asarray(values, dtype=float)
         finite = values[np.isfinite(values)]
         vmax = float(np.quantile(finite, vmax_quantile)) if finite.size else 1.0
         vmax = max(vmax, np.nextafter(0, 1))
-        axis.scatter(coords[:, 0], coords[:, 1], s=background_size, c="#D9D9D9", linewidths=0, rasterized=True)
+        display = np.clip(np.nan_to_num(values, nan=0.0) / vmax, 0, 1)
+        key = f"{kind}_{feature}"
+        source[key] = pd.DataFrame(
+            {
+                "umap_1": coords[:, 0],
+                "umap_2": coords[:, 1],
+                "value": values,
+                "display_vmax_p99": vmax,
+                "display_fraction": display,
+            },
+            index=adata.obs_names,
+        )
+        background_frames.append(
+            pd.DataFrame({"umap_1": coords[:, 0], "umap_2": coords[:, 1], "feature": label})
+        )
         positive = np.flatnonzero(np.isfinite(values) & (values > 0))
         positive = positive[np.argsort(values[positive])]
-        scatter = axis.scatter(
-            coords[positive, 0], coords[positive, 1], c=np.clip(values[positive], 0, vmax),
-            cmap="YlGnBu", norm=Normalize(0, vmax), s=point_size, linewidths=0, rasterized=True,
+        foreground_frames.append(
+            pd.DataFrame(
+                {
+                    "umap_1": coords[positive, 0],
+                    "umap_2": coords[positive, 1],
+                    "display_fraction": display[positive],
+                    "feature": label,
+                }
+            )
         )
-        panel_title = title if not subtitle else f"{title}\n{subtitle}"
-        axis.set_title(
-            panel_title, fontsize=8.2,
-            fontstyle="italic" if kind == "gene" else "normal",
-            pad=3, linespacing=1.05,
+
+    background = pd.concat(background_frames, ignore_index=True)
+    foreground = pd.concat(foreground_frames, ignore_index=True)
+    background["feature"] = pd.Categorical(background["feature"], feature_order, ordered=True)
+    foreground["feature"] = pd.Categorical(foreground["feature"], feature_order, ordered=True)
+
+    plot = (
+        ggplot()
+        + geom_point(
+            background, aes("umap_1", "umap_2"), inherit_aes=False,
+            color="#D9D9D9", size=background_size, stroke=0, raster=True,
         )
-        axis.set_aspect("equal")
-        axis.set_xticks([])
-        axis.set_yticks([])
-        for spine in axis.spines.values():
-            spine.set_visible(False)
-        cb = fig.colorbar(scatter, ax=axis, fraction=0.040, pad=0.01)
-        cb.ax.tick_params(labelsize=5, length=1.5)
-        source[f"{kind}_{feature}"] = pd.DataFrame({
-            "umap_1": coords[:, 0], "umap_2": coords[:, 1], "value": values,
-        }, index=adata.obs_names)
-    fig.text(0.25, 0.985, "Programs", ha="center", va="top", fontsize=10, fontweight="bold")
-    fig.text(0.74, 0.985, "Markers", ha="center", va="top", fontsize=10, fontweight="bold")
-    fig.text(0.005, 0.985, "e", ha="left", va="top", fontsize=15, fontweight="bold")
-    return fig, source
+        + geom_point(
+            foreground, aes("umap_1", "umap_2", color="display_fraction"),
+            inherit_aes=False, size=point_size, stroke=0, raster=True,
+        )
+        + scale_color_cmap(cmap_name="YlGnBu", limits=(0, 1), guide=None)
+        + facet_wrap("~feature", ncol=2)
+        + coord_fixed()
+        + theme_void()
+        + theme(
+            figure_size=(5.7, 5.2),
+            strip_text=element_text(family="Liberation Sans", size=8.2, color="black"),
+            strip_background=element_rect(fill="white", color="white"),
+            panel_spacing=0.10,
+            plot_background=element_rect(fill="white", color="white"),
+            panel_background=element_rect(fill="white", color="white"),
+            plot_margin=0.02,
+        )
+    )
+    return plot, source
