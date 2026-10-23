@@ -1,0 +1,74 @@
+name: Validate figure notebooks
+
+on:
+  push:
+    branches:
+      - curation/figure-reproduction-v1
+    paths:
+      - "src/cc_perturbseq/**"
+      - "notebooks/**"
+      - "scripts/**"
+      - "config/**"
+      - ".gitattributes"
+      - ".github/workflows/validate-figure-second-pass.yml"
+  workflow_dispatch:
+
+jobs:
+  syntax-and-notebook-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate shell scripts
+        run: |
+          set -euo pipefail
+          find scripts -type f -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
+      - name: Compile Python modules and notebook code cells
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import ast
+          import json
+          from pathlib import Path
+          import sys
+
+          failures: list[str] = []
+
+          for path in sorted(Path("src/cc_perturbseq").glob("*.py")):
+              try:
+                  source = path.read_text(encoding="utf-8")
+                  ast.parse(source, filename=str(path))
+                  compile(source, str(path), "exec")
+              except Exception as exc:
+                  failures.append(f"{path}: {type(exc).__name__}: {exc}")
+
+          for path in sorted(Path("notebooks").rglob("*.ipynb")):
+              try:
+                  payload = json.loads(path.read_text(encoding="utf-8"))
+                  if payload.get("nbformat") != 4:
+                      failures.append(f"{path}: unexpected nbformat={payload.get('nbformat')}")
+                      continue
+                  for index, cell in enumerate(payload.get("cells", [])):
+                      if cell.get("cell_type") != "code":
+                          continue
+                      source = "".join(cell.get("source", []))
+                      if not source.strip():
+                          continue
+                      # The curated figure notebooks should contain plain Python,
+                      # not notebook magics or shell escapes.
+                      ast.parse(source, filename=f"{path}:cell-{index}")
+                      compile(source, f"{path}:cell-{index}", "exec")
+              except Exception as exc:
+                  failures.append(f"{path}: {type(exc).__name__}: {exc}")
+
+          if failures:
+              print("Validation failures:")
+              for failure in failures:
+                  print(f"- {failure}")
+              sys.exit(1)
+
+          print("All Python modules and notebook code cells parsed and compiled successfully.")
+          PY

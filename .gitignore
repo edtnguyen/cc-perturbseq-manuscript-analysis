@@ -1,0 +1,33 @@
+# Local machine/Sherlock configuration
+config/paths.local.yaml
+config/sherlock_notebook_roots.local.txt
+
+# Notebook state
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+
+# Generated outputs and audit receipts
+results/
+reproduction_audit/
+
+# Large scientific objects
+*.h5ad
+*.h5mu
+*.loom
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.pkl
+*.pickle
+*.parquet
+*.feather
+*.mtx
+*.bam
+*.fastq
+*.fastq.gz
+
+# OS/editor files
+.DS_Store
+*.swp
