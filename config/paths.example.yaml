@@ -22,8 +22,9 @@ ccperturbseq:
   cnmf_h5mu: /oak/stanford/groups/engreitz/Users/ymo/IGVF_ccperturbseq/Result/030526_100k_cells_100iter_allHVG_torch_halsvar_batch_e7_50/adata/cNMF_50_0_2.h5mu
   figure1d_program_metadata: /oak/stanford/groups/engreitz/Users/tri/CodeBase/programDE/notebooks/per_day_umaps/data/program_activity_long_v4.csv
   figure1d_program_order: /oak/stanford/groups/engreitz/Users/tri/CodeBase/programDE/notebooks/per_day_umaps/analysis/regulator_dotplots/program_order.txt
-  cnmf_spectra: /oak/stanford/groups/engreitz/Users/ymo/ipsc_ec/cnmf_output/ipsc-ec/ipsc-ec.spectra.k_50.dt_2_0.txt
-  program_annotations: REPLACE_WITH_FINAL_PROGRAM_ANNOTATION_TABLE
+  # Final 030526 consensus spectra used by focused program-annotation panels.
+  cnmf_spectra: /oak/stanford/groups/engreitz/Users/ymo/IGVF_ccperturbseq/Result/030526_100k_cells_100iter_allHVG_torch_halsvar_batch_e7_50/030526_100k_cells_100iter_allHVG_torch_halsvar_batch_e7_50.spectra.k_50.dt_0_2.consensus.txt
+  program_annotations: /oak/stanford/groups/engreitz/Users/tri/CodeBase/programDE/notebooks/per_day_umaps/data/Programs_annotations.xlsx
   target_metadata: /oak/stanford/groups/engreitz/Users/tri/CodeBase/programDE/notebooks/300genes_guide_metadata_v43.tsv
   ec_fraction_table: REPLACE_WITH_FINAL_GUIDE_LEVEL_EC_PERCENTAGE_AND_FDR_TABLE
   preprocessing_qc: REPLACE_WITH_QC_BUNDLE_DIRECTORY_OR_H5AD
@@ -50,13 +51,19 @@ multiome:
   tss_profiles: REPLACE_WITH_TSS_PROFILE_TABLE
   chrombpnet_performance: REPLACE_WITH_CHROMBPNET_PERFORMANCE_TABLE
   motif_qc: REPLACE_WITH_MOTIF_QC_TABLE
-  enhancer_enrichment_results: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/2.tf_enrichment_in_programs/enhancer_enrichment_results.tsv
+  # Day-specific scE2G, motif-carrier-conditioned test, >=10 carriers/group.
+  enhancer_enrichment_results: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/2.tf_enrichment_in_programs/enhancer_enrichment_results_min10.tsv
   modisco_compiled_h5: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/results/compendium/modisco_compiled/modisco_compiled.h5
   cluster_motif_map: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/0.0.motif_id_annotation/tables/cluster_to_tf_motif_id_mapping.tsv
   motif_fdr_template: /oak/stanford/groups/engreitz/Users/ogrokhov/experiments/ec_sce2g/tfmn/results_0604/gene_TF_df_top300_genes_fdr_d{day}.txt
   motif_score_template:
   motif_name_map: /oak/stanford/groups/engreitz/Users/mattei/Git/motif-clustering/resources/65NR_motif_names.txt
   motif_logo_dir: /oak/stanford/groups/engreitz/Users/mattei/Git/motif-clustering/output/405_final_motifs/logos
+
+hippo_timecourse:
+  # Paths established by reproject_cnmf_compare_gene_sets.ipynb.
+  query_h5ad: /scratch/users/edtng/20260325_Hippo_timecourse/perturbseq_cNMF_projection/Hippo_timecourse_combined.projected_perturbseq_cNMF_50_dt_0_2.zero_based.h5ad
+  reprojected_cnmf_h5ad: /scratch/users/edtng/20260325_Hippo_timecourse/perturbseq_cNMF_projection/reprojection_gene_set_comparison/Hippo_timecourse_reprojected_cNMF_compare_gene_sets.cell_x_program.h5ad
 
 benchmark:
   hipsc_pilot_anndata: REPLACE_WITH_HIPSC_CC_VS_CROP_ANNDATA
