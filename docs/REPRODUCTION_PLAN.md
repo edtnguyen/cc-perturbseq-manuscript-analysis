@@ -4,7 +4,7 @@
 
 This branch now targets only the figures requested for remaking from **Working CC-Perturb-seq EC Differentiation - Text V3**:
 
-- Main figures: **Figure 1, Figure 2, Figure 3b-d, and Figure 4d-e**.
+- Main figures: **Figure 1, Figure 2, Figure 3b–d and f, and Figure 4c–e**.
 - Supplementary figures: **Figures S1-S9**.
 
 Panels outside this scope are retained in the historical inventory but are not part of the current execution plan.
@@ -52,6 +52,10 @@ The initial classifications in `PANEL_REPRODUCTION_MATRIX.csv` are provisional a
 - `BLOCKED_COLLABORATOR`: requires a collaborator-owned source asset or dataset.
 - `BLOCKED_INPUT`: required local/Sherlock input has not been located.
 - `SUPERSEDED`: historical source retained but not used.
+
+## Hippo input reconstruction (2026-10-29)
+
+`notebooks/preprocessing/Rebuild_Hippo_Timecourse.ipynb` is the Run All entry point for recovering the expression and final top-specific-200 projection used by Figure 3f and Figure 4c. It validates the original cohort, writes durable Oak H5ADs, updates local configuration, and can execute Figures 3 and 4 sequentially. See [HIPPO_REBUILD.md](HIPPO_REBUILD.md). The code has bounded local tests; production data execution and manuscript comparison must be recorded after the Sherlock run.
 
 ## Work packages and execution order
 
@@ -176,3 +180,4 @@ Known screen-panel checks include:
 - whether significance colors represent genome-wide hits, validation hits, or their intersection.
 
 Such cases are recorded as explicit decisions before a panel is marked `OUTPUT_MATCHED`.
+

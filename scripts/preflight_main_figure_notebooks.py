@@ -17,6 +17,9 @@ Sherlock checks (--check-data):
 
 Runtime checks (--check-runtime):
   * report missing Python packages used by the four notebooks.
+
+Optional rebuild checks (--include-hippo-rebuild):
+  * also audit the Hippo reconstruction notebook, configuration and dependencies.
 """
 
 from __future__ import annotations
@@ -41,6 +44,7 @@ MAIN_NOTEBOOKS = (
     Path("notebooks/main/Figure_03.ipynb"),
     Path("notebooks/main/Figure_04.ipynb"),
 )
+HIPPO_REBUILD_NOTEBOOK = Path("notebooks/preprocessing/Rebuild_Hippo_Timecourse.ipynb")
 BOOTSTRAP_TAG = "repo-path-bootstrap"
 WORKBOOK = Path("data/figure_02/cNMF_50_0_2_032526_6co.xlsx")
 WORKBOOK_SHA256 = "d2fe4834b1efd3c00e01062b56b907a6178bfbc48a40beb5ea7b347538bfc824"
@@ -58,8 +62,10 @@ RUNTIME_PACKAGES = (
     "plotnine",
     "scanpy",
     "scipy",
+    "sklearn",
     "yaml",
 )
+HIPPO_REBUILD_PACKAGES = ("nbformat", "nbclient", "ipykernel")
 
 
 def repo_root() -> Path:
@@ -247,7 +253,14 @@ def main() -> int:
         action="store_true",
         help="Verify Python packages used by Figures 1–4 are importable.",
     )
+    parser.add_argument(
+        "--include-hippo-rebuild",
+        action="store_true",
+        help="Also audit the Hippo reconstruction notebook and its dependencies.",
+    )
     args = parser.parse_args()
+
+    notebooks = MAIN_NOTEBOOKS + ((HIPPO_REBUILD_NOTEBOOK,) if args.include_hippo_rebuild else ())
 
     root = repo_root()
     defaults = yaml.safe_load(
@@ -259,7 +272,7 @@ def main() -> int:
     failures: list[str] = []
 
     print("Static audit of main figure notebooks")
-    for relative_path in MAIN_NOTEBOOKS:
+    for relative_path in notebooks:
         try:
             keys, modules, hard_paths = extract_notebook_facts(root, relative_path)
             all_keys.update(keys)
@@ -308,9 +321,10 @@ def main() -> int:
             print(f"  PASS {WORKBOOK}: SHA-256 verified")
 
     if args.check_runtime:
+        runtime_packages = RUNTIME_PACKAGES + (HIPPO_REBUILD_PACKAGES if args.include_hippo_rebuild else ())
         missing_packages = [
             package
-            for package in RUNTIME_PACKAGES
+            for package in runtime_packages
             if importlib.util.find_spec(package) is None
         ]
         if missing_packages:
@@ -320,7 +334,7 @@ def main() -> int:
         else:
             print(
                 "  PASS runtime packages: "
-                + ", ".join(RUNTIME_PACKAGES)
+                + ", ".join(runtime_packages)
             )
 
     if args.check_data:
@@ -368,7 +382,7 @@ def main() -> int:
         return 1
 
     print(
-        f"\nPRE-FLIGHT PASSED: {len(MAIN_NOTEBOOKS)} notebooks, "
+        f"\nPRE-FLIGHT PASSED: {len(notebooks)} notebooks, "
         f"{len(all_keys)} unique configured inputs, "
         f"{len(all_modules)} support modules."
     )
@@ -382,3 +396,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

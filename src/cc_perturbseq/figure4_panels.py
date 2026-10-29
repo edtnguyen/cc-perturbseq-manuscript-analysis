@@ -27,6 +27,9 @@ from .figure3_panels import (
     _add_logo_strip,
     _draw_rect_heatmap,
     _infer_column,
+    _hippo_aligned_metadata,
+    _hippo_panel_mask,
+    _hippo_program_values,
     _load_logo_objects,
     _normalize_token,
     _parse_program,
@@ -113,33 +116,12 @@ def prepare_figure4c_dotplots(
     query = sc.read_h5ad(query_h5ad_path)
     projected = sc.read_h5ad(reprojected_h5ad_path)
 
-    projected_ids = pd.Index(projected.obs_names.astype(str))
-    query_ids = pd.Index(query.obs_names.astype(str))
-    common = projected_ids[projected_ids.isin(query_ids)]
-    if not len(common):
-        raise ValueError("Query and reprojected AnnData objects share no cells.")
-    projected = projected[common].copy()
-    query = query[common].copy()
-
-    obs = projected.obs.copy()
-    if "condition" not in obs.columns:
-        if "sample_name" not in obs.columns:
-            raise KeyError("Projected AnnData lacks both condition and sample_name.")
-        obs["condition"] = obs["sample_name"].astype(str).str.replace(
-            r"_rep\d+$", "", regex=True
-        )
-
-    keep = obs["condition"].astype(str).isin(FIGURE4C_D12_CONDITIONS).to_numpy()
-    if "qc_pass_condition_specific" in obs.columns:
-        keep &= obs["qc_pass_condition_specific"].fillna(False).astype(bool).to_numpy()
-    if "sublibID" in obs.columns:
-        keep &= ~obs["sublibID"].astype(str).eq("s8").to_numpy()
-    if not keep.any():
-        raise ValueError("No D1-to-D2 Hippo time-course cells passed the requested filters.")
-
+    aligned_obs = _hippo_aligned_metadata(query, projected)
+    n_common_cells = len(aligned_obs)
+    keep = _hippo_panel_mask(aligned_obs, FIGURE4C_D12_CONDITIONS)
     projected = projected[keep].copy()
-    query = query[keep].copy()
-    obs = projected.obs.copy()
+    query = query[projected.obs_names].copy()
+    obs = aligned_obs.loc[projected.obs_names].copy()
     obs["condition_name"] = pd.Categorical(
         obs["condition"].astype(str).map(FIGURE4C_CONDITION_LABELS),
         categories=list(FIGURE4C_CONDITION_ORDER),
@@ -167,21 +149,7 @@ def prepare_figure4c_dotplots(
     gene_adata = gene_adata[:, all_genes].copy()
 
     clr_key = "X_cnmf_clr_top_specific_200"
-    if clr_key not in projected.obsm:
-        raise KeyError(
-            f"Reprojected AnnData lacks obsm[{clr_key!r}]. "
-            f"Available keys: {list(projected.obsm.keys())}"
-        )
-    program_names = pd.Index(projected.var_names.astype(str))
-    missing_programs = [
-        program for program in FIGURE4C_PROGRAMS if program not in program_names
-    ]
-    if missing_programs:
-        raise KeyError(f"Reprojected AnnData is missing programs: {missing_programs}")
-    program_positions = [
-        int(program_names.get_loc(program)) for program in FIGURE4C_PROGRAMS
-    ]
-    clr = np.asarray(projected.obsm[clr_key], dtype=float)[:, program_positions]
+    clr = _hippo_program_values(projected, FIGURE4C_PROGRAMS)
     program_adata = ad.AnnData(
         X=clr.copy(),
         obs=obs.copy(),
@@ -248,7 +216,7 @@ def prepare_figure4c_dotplots(
             )
 
     metadata = {
-        "n_common_cells": len(common),
+        "n_common_cells": n_common_cells,
         "n_D1_to_D2_QC_cells": int(keep.sum()),
         "conditions": list(FIGURE4C_CONDITION_ORDER),
         "program_projection": clr_key,
@@ -867,3 +835,4 @@ def make_figure4e_annotation(
         "motif_value": "-log10(BH q-value)",
     }
     return figure, source_tables, metadata
+

@@ -1360,6 +1360,127 @@ def make_figure3d_annotation(
     return figure, source_tables, metadata
 
 
+
+def _hippo_aligned_metadata(query, projected) -> pd.DataFrame:
+    """Validate the canonical expression/projection pair and align by cell ID.
+
+    The rebuilt expression object deliberately has only the broad producer QC.
+    Reconstruct the later condition-specific flag from the recovered projection
+    definition, checking any stored annotations instead of silently skipping QC.
+    No gene-expression matrices are copied while checking the metadata.
+    """
+    from .hippo_projection import add_projection_metadata
+
+    query_ids = pd.Index(query.obs_names.astype(str))
+    projected_ids = pd.Index(projected.obs_names.astype(str))
+    if not query_ids.is_unique or not projected_ids.is_unique:
+        raise ValueError("Hippo expression and projection cell IDs must be unique.")
+    missing_projection = query_ids.difference(projected_ids)
+    missing_query = projected_ids.difference(query_ids)
+    if len(missing_projection) or len(missing_query):
+        raise ValueError(
+            "The canonical Hippo query and projection must cover the same cells; "
+            f"{len(missing_projection)} query cells lack projection and "
+            f"{len(missing_query)} projected cells lack expression. "
+            "Run notebooks/preprocessing/Rebuild_Hippo_Timecourse.ipynb."
+        )
+
+    annotated = []
+    for label, obj in (("query", query), ("projection", projected)):
+        required = ("sample_name", "sublibID", "pct_counts_mt", "pct_counts_ribo")
+        missing = [column for column in required if column not in obj.obs]
+        if missing:
+            raise KeyError(f"Hippo {label} is missing metadata: {missing}")
+        obs = add_projection_metadata(obj.obs)
+        for column in ("condition", "replicate", "treatment", "qc_pass_condition_specific"):
+            if column in obj.obs:
+                stored = obj.obs[column]
+                rebuilt = obs[column]
+                equal = (stored == rebuilt) | (stored.isna() & rebuilt.isna())
+                if not bool(equal.fillna(False).all()):
+                    raise ValueError(
+                        f"Hippo {label} {column!r} disagrees with the recovered "
+                        "sample mapping or condition-specific QC definition."
+                    )
+        if obs["sublibID"].isna().any():
+            raise ValueError(f"Hippo {label} has missing sublibrary identifiers.")
+        annotated.append(obs.loc[projected_ids].copy())
+
+    query_obs, projected_obs = annotated
+    compare = (
+        "sample_name", "biological_sample", "sublibID", "plate", "well",
+        "condition", "replicate", "treatment", "qc_pass_condition_specific",
+        "pct_counts_mt", "pct_counts_ribo", "n_genes_by_counts", "total_counts",
+    )
+    for column in compare:
+        if column not in query_obs or column not in projected_obs:
+            continue
+        left, right = query_obs[column], projected_obs[column]
+        # Categorical storage may differ even though its values are identical.
+        if isinstance(left.dtype, pd.CategoricalDtype):
+            left = left.astype(object)
+        if isinstance(right.dtype, pd.CategoricalDtype):
+            right = right.astype(object)
+        equal = (left == right) | (left.isna() & right.isna())
+        if not bool(equal.fillna(False).all()):
+            raise ValueError(f"Hippo cell metadata disagree for {column!r}.")
+    return projected_obs
+
+
+def _hippo_panel_mask(obs: pd.DataFrame, conditions: Sequence[str]) -> np.ndarray:
+    """Apply the original panel filters and reject empty requested conditions."""
+    keep = (
+        obs["condition"].astype(str).isin(conditions).to_numpy()
+        & obs["qc_pass_condition_specific"].to_numpy(dtype=bool)
+        & ~obs["sublibID"].astype(str).eq("s8").to_numpy()
+    )
+    retained = set(obs.loc[keep, "condition"].astype(str))
+    missing = [condition for condition in conditions if condition not in retained]
+    if missing:
+        raise ValueError(
+            "Hippo conditions have no cells after condition-specific QC and "
+            f"excluding sublibrary s8: {missing}"
+        )
+    return keep
+
+
+def _hippo_program_values(projected, programs: Sequence[str]) -> np.ndarray:
+    """Resolve selected CLR columns using explicit zero-based program labels."""
+    from scipy import sparse
+
+    key = "X_cnmf_clr_top_specific_200"
+    if key not in projected.obsm:
+        raise KeyError(f"Reprojected AnnData lacks obsm[{key!r}].")
+    values = projected.obsm[key]
+    expected_names = pd.Index([f"P{i}" for i in range(50)])
+    if values.shape != (projected.n_obs, 50):
+        raise ValueError(f"Hippo {key} must be cells by 50 programs; got {values.shape}.")
+    if isinstance(values, pd.DataFrame):
+        columns = pd.Index(values.columns.astype(str))
+        if not columns.is_unique or set(columns) != set(expected_names):
+            raise ValueError("Labelled Hippo CLR columns must be P0 through P49.")
+        matrix = values.to_numpy(dtype=float)
+        positions = [int(columns.get_loc(program)) for program in programs]
+    else:
+        names = pd.Index(projected.var_names.astype(str))
+        if not names.equals(expected_names):
+            raise ValueError("Hippo CLR array requires var_names ordered P0 through P49.")
+        if "program" not in projected.var or "program_id_zero_based" not in projected.var:
+            raise ValueError(
+                "Hippo CLR array lacks explicit program/zero-based column metadata. "
+                "Rebuild the canonical projected object."
+            )
+        labels = projected.var["program"].astype(str).to_numpy()
+        ids = pd.to_numeric(projected.var["program_id_zero_based"], errors="raise").to_numpy()
+        if not np.array_equal(labels, expected_names.to_numpy()) or not np.array_equal(ids, np.arange(50)):
+            raise ValueError("Hippo program-column metadata disagree with P0 through P49.")
+        matrix = values.toarray() if sparse.issparse(values) else np.asarray(values, dtype=float)
+        positions = [int(names.get_loc(program)) for program in programs]
+    if not np.isfinite(matrix).all():
+        raise ValueError("Hippo top-specific-200 CLR matrix contains non-finite values.")
+    return matrix[:, positions]
+
+
 def prepare_figure3f_dotplots(
     query_h5ad_path: str | Path,
     reprojected_h5ad_path: str | Path,
@@ -1371,31 +1492,12 @@ def prepare_figure3f_dotplots(
 
     query = sc.read_h5ad(query_h5ad_path)
     projected = sc.read_h5ad(reprojected_h5ad_path)
-    projected_ids = pd.Index(projected.obs_names.astype(str))
-    query_ids = pd.Index(query.obs_names.astype(str))
-    common = projected_ids[projected_ids.isin(query_ids)]
-    if not len(common):
-        raise ValueError("Query and reprojected AnnData objects share no cells.")
-    projected = projected[common].copy()
-    query = query[common].copy()
-
-    obs = projected.obs.copy()
-    if "condition" not in obs.columns:
-        if "sample_name" not in obs.columns:
-            raise KeyError("Projected AnnData lacks both condition and sample_name.")
-        obs["condition"] = (
-            obs["sample_name"].astype(str).str.replace(r"_rep\d+$", "", regex=True)
-        )
-    keep = obs["condition"].astype(str).isin(FIGURE3F_D3_CONDITIONS).to_numpy()
-    if "qc_pass_condition_specific" in obs.columns:
-        keep &= obs["qc_pass_condition_specific"].fillna(False).astype(bool).to_numpy()
-    if "sublibID" in obs.columns:
-        keep &= ~obs["sublibID"].astype(str).eq("s8").to_numpy()
-    if not keep.any():
-        raise ValueError("No D3 Hippo time-course cells passed the requested filters.")
+    aligned_obs = _hippo_aligned_metadata(query, projected)
+    n_common_cells = len(aligned_obs)
+    keep = _hippo_panel_mask(aligned_obs, FIGURE3F_D3_CONDITIONS)
     projected = projected[keep].copy()
-    query = query[keep].copy()
-    obs = projected.obs.copy()
+    query = query[projected.obs_names].copy()
+    obs = aligned_obs.loc[projected.obs_names].copy()
     obs["condition_name"] = pd.Categorical(
         obs["condition"].astype(str).map(FIGURE3F_CONDITION_LABELS),
         categories=list(FIGURE3F_CONDITION_ORDER),
@@ -1419,23 +1521,7 @@ def prepare_figure3f_dotplots(
     gene_adata = gene_adata[:, all_genes].copy()
 
     clr_key = "X_cnmf_clr_top_specific_200"
-    if clr_key not in projected.obsm:
-        raise KeyError(
-            f"Reprojected AnnData lacks obsm[{clr_key!r}]. "
-            f"Available keys: {list(projected.obsm.keys())}"
-        )
-    program_names = pd.Index(projected.var_names.astype(str))
-    missing_programs = [
-        program for program in FIGURE3F_PROGRAMS if program not in program_names
-    ]
-    if missing_programs:
-        raise KeyError(
-            f"Reprojected AnnData is missing programs: {missing_programs}"
-        )
-    program_positions = [
-        int(program_names.get_loc(program)) for program in FIGURE3F_PROGRAMS
-    ]
-    clr = np.asarray(projected.obsm[clr_key], dtype=float)[:, program_positions]
+    clr = _hippo_program_values(projected, FIGURE3F_PROGRAMS)
     program_adata = ad.AnnData(
         X=clr.copy(),
         obs=obs.copy(),
@@ -1506,7 +1592,7 @@ def prepare_figure3f_dotplots(
                 }
             )
     metadata = {
-        "n_common_cells": len(common),
+        "n_common_cells": n_common_cells,
         "n_D3_QC_cells": int(keep.sum()),
         "conditions": list(FIGURE3F_CONDITION_ORDER),
         "program_projection": clr_key,
@@ -1521,3 +1607,4 @@ def prepare_figure3f_dotplots(
         pd.DataFrame(program_rows),
         metadata,
     )
+

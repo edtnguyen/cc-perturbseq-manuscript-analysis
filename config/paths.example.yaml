@@ -63,9 +63,18 @@ multiome:
   motif_logo_dir: /oak/stanford/groups/engreitz/Users/mattei/Git/motif-clustering/output/405_final_motifs/logos
 
 hippo_timecourse:
-  # Paths established by reproject_cnmf_compare_gene_sets.ipynb.
-  query_h5ad: /scratch/users/edtng/20260325_Hippo_timecourse/perturbseq_cNMF_projection/Hippo_timecourse_combined.projected_perturbseq_cNMF_50_dt_0_2.zero_based.h5ad
-  reprojected_cnmf_h5ad: /scratch/users/edtng/20260325_Hippo_timecourse/perturbseq_cNMF_projection/reprojection_gene_set_comparison/Hippo_timecourse_reprojected_cNMF_compare_gene_sets.cell_x_program.h5ad
+  # Run notebooks/preprocessing/Rebuild_Hippo_Timecourse.ipynb to recreate these.
+  # Gene expression comes from the raw combined query; CLR comes from the
+  # selected top_specific_200 fixed-reference projection.
+  query_h5ad: /oak/stanford/groups/engreitz/Users/tri/Hippo_timecourse_rebuild/Hippo_timecourse_combined.h5ad
+  reprojected_cnmf_h5ad: /oak/stanford/groups/engreitz/Users/tri/Hippo_timecourse_rebuild/perturbseq_cNMF_projection/reprojection_gene_set_comparison/Hippo_timecourse_reprojected_cNMF_compare_gene_sets.cell_x_program.h5ad
+
+hippo_rebuild:
+  # Parent of Hippo:eTN8_GEX_sub1 ... sub8; edit if the processed files moved.
+  input_root: /scratch/users/edtng/Hippo_timecourse
+  output_root: /oak/stanford/groups/engreitz/Users/tri/Hippo_timecourse_rebuild
+  # This is gene_spectra_tpm, not ccperturbseq.cnmf_spectra (consensus).
+  gene_spectra_tpm: /oak/stanford/groups/engreitz/Users/ymo/IGVF_ccperturbseq/Result/030526_100k_cells_100iter_allHVG_torch_halsvar_batch_e7_50/030526_100k_cells_100iter_allHVG_torch_halsvar_batch_e7_50.gene_spectra_tpm.k_50.dt_0_2.txt
 
 benchmark:
   hipsc_pilot_anndata: REPLACE_WITH_HIPSC_CC_VS_CROP_ANNDATA
@@ -87,3 +96,4 @@ assets:
   s2a_ccperturbseq_schematic: REPLACE_WITH_EDITABLE_S2A_SOURCE
   s5g_motif_schematic: REPLACE_WITH_EDITABLE_S5G_SOURCE
   s8a_bmp_schematic: REPLACE_WITH_EDITABLE_S8A_SOURCE
+

@@ -242,6 +242,12 @@ def _format_missing_inputs(
         detail = row.error or "missing"
         location = row.path or "<unresolved>"
         lines.append(f"  - {row.key}: {location} ({detail})")
+    if any(str(key).startswith("hippo_timecourse.") for key in missing["key"]):
+        lines.append(
+            "Recreate and reconnect the Hippo inputs with Run All in "
+            "notebooks/preprocessing/Rebuild_Hippo_Timecourse.ipynb. "
+            "Its settings cell identifies the eight processed sublibrary inputs."
+        )
     lines.append(
         "Run `python scripts/preflight_main_figure_notebooks.py --check-data` "
         "from the repository root to audit Figures 1–4 together."
@@ -399,3 +405,4 @@ def write_receipt(
         encoding="utf-8",
     )
     return path
+
