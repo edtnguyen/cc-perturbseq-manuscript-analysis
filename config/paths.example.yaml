@@ -1,5 +1,7 @@
-# Copy this file to config/paths.local.yaml on Sherlock.
-# config/paths.local.yaml should remain untracked.
+# Tracked Sherlock defaults for the curated figure notebooks.
+# A config/paths.local.yaml file is optional and remains untracked; create one
+# only when a machine-specific path must override a value below. Local values
+# are merged over these defaults, so the local file may contain only overrides.
 
 outputs:
   root: ${SCRATCH}/cc_perturbseq_manuscript_figures
