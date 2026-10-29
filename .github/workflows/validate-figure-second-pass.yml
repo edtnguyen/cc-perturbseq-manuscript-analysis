@@ -9,6 +9,7 @@ on:
       - "notebooks/**"
       - "scripts/**"
       - "config/**"
+      - "data/figure_02/**"
       - ".gitattributes"
       - ".github/workflows/validate-figure-second-pass.yml"
   workflow_dispatch:
@@ -21,6 +22,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Install lightweight validation dependency
+        run: python -m pip install --disable-pip-version-check PyYAML
       - name: Validate shell scripts
         run: |
           set -euo pipefail
@@ -57,8 +60,6 @@ jobs:
                       source = "".join(cell.get("source", []))
                       if not source.strip():
                           continue
-                      # The curated figure notebooks should contain plain Python,
-                      # not notebook magics or shell escapes.
                       ast.parse(source, filename=f"{path}:cell-{index}")
                       compile(source, f"{path}:cell-{index}", "exec")
               except Exception as exc:
@@ -72,3 +73,5 @@ jobs:
 
           print("All Python modules and notebook code cells parsed and compiled successfully.")
           PY
+      - name: Static preflight for Figures 1 through 4
+        run: python scripts/preflight_main_figure_notebooks.py
