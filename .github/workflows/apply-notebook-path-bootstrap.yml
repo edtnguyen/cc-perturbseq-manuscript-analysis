@@ -1,0 +1,38 @@
+name: Apply notebook repository path bootstrap
+
+on:
+  push:
+    branches:
+      - curation/figure-reproduction-v1
+    paths:
+      - scripts/add_notebook_repo_path_bootstrap.py
+      - .github/workflows/apply-notebook-path-bootstrap.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Add and validate bootstrap cells
+        run: python3 scripts/add_notebook_repo_path_bootstrap.py
+
+      - name: Commit notebook updates
+        shell: bash
+        run: |
+          if git diff --quiet -- notebooks/main notebooks/supplementary; then
+            echo "No notebook changes were required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add notebooks/main/*.ipynb notebooks/supplementary/*.ipynb
+          git commit -m "Add repository path bootstrap to figure notebooks"
+          git push origin "HEAD:${{ github.ref_name }}"
