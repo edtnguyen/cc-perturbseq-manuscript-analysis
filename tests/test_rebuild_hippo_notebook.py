@@ -27,7 +27,7 @@ def test_rebuild_notebook_uses_regenerated_sublibraries():
     assert 'get_path(paths, "hippo_rebuild.input_root")' in source
     assert "preflight_sublibraries(INPUT_ROOT)" in source
     assert "rebuild_combined" in source
-    assert "Hippo:eTN8_GEX_sub1" in source
+    assert "Hippo:eTN8_GEX_sub{1..8}" in source
     assert "kb_all_main_raw" in source
     assert "counts_filtered" in source
 
@@ -45,7 +45,7 @@ def test_rebuild_notebook_replaces_stale_artifacts_and_runs_figures():
     assert "FORCE_REBUILD_ALL = False" in source
     assert "except FileExistsError as exc:" in source
     assert "overwrite=True" in source
-    assert '("Figure_03.ipynb", "Figure_04.ipynb")' in source
+    assert 'notebook_names=("Figure_03.ipynb", "Figure_04.ipynb")' in source
     assert "validate_projected" in source
     assert "validate_hippo_panel_inputs" in source
     assert "write_hippo_overrides" in source
