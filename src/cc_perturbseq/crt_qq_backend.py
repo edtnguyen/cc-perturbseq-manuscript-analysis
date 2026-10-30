@@ -236,6 +236,7 @@ def load_guide2gene_metadata(
         "gene_symbol",
         "symbol",
         "grna_target",
+        "intended_target_name",
     ]
 
     resolved_guide_col = None
@@ -263,12 +264,23 @@ def load_guide2gene_metadata(
             "Use --guide-metadata-guide-col and --guide-metadata-target-col."
         )
 
-    raw_mapping = dict(
-        zip(
-            table[resolved_guide_col].astype(str),
-            table[resolved_target_col].astype(str),
-        )
-    )
+    if guide_col and resolved_guide_col != guide_col:
+        raise KeyError(f"Explicit guide column {guide_col!r} was not found.")
+    if target_col and resolved_target_col != target_col:
+        raise KeyError(f"Explicit target column {target_col!r} was not found.")
+    # Do not overwrite inferred SAFE/non-targeting/NTC labels with string 'nan'.
+    selected = table[[resolved_guide_col, resolved_target_col]].dropna().astype(str)
+    selected[resolved_guide_col] = selected[resolved_guide_col].str.strip()
+    selected[resolved_target_col] = selected[resolved_target_col].str.strip()
+    missing = {"", "nan", "none", "na", "n/a", "null"}
+    selected = selected.loc[
+        ~selected[resolved_guide_col].str.lower().isin(missing)
+        & ~selected[resolved_target_col].str.lower().isin(missing)
+    ]
+    conflicts = selected.groupby(resolved_guide_col)[resolved_target_col].nunique()
+    if (conflicts > 1).any():
+        raise ValueError(f"Conflicting target annotations for guides: {list(conflicts[conflicts > 1].index[:10])}")
+    raw_mapping = dict(zip(selected[resolved_guide_col], selected[resolved_target_col]))
     return {guide: raw_mapping[guide] for guide in guide_names if guide in raw_mapping}
 
 
@@ -278,8 +290,11 @@ def build_guide2gene(
     metadata_tsv: str | None,
     guide_col: str | None,
     target_col: str | None,
+    mapping_policy: str = "metadata",
 ) -> dict[str, str]:
     """Build guide-to-target mapping, defaulting to guide_name.split('_', 1)[0]."""
+    if mapping_policy not in {"source_names", "metadata"}:
+        raise ValueError("guide mapping policy must be source_names or metadata")
     mapping = infer_guide2gene_from_names(guide_names, ntc_labels)
 
     if metadata_tsv:
@@ -292,12 +307,22 @@ def build_guide2gene(
                     guide_col,
                     target_col,
                 )
-                mapping.update(metadata_mapping)
+                # Recognized controls remain control groups even when the
+                # metadata target field contains an individual SAFE guide ID.
+                for guide in metadata_mapping:
+                    if mapping.get(guide) in ntc_labels:
+                        metadata_mapping[guide] = mapping[guide]
+                if mapping_policy == "metadata":
+                    mapping.update(metadata_mapping)
+                else:
+                    print("guide mapping policy: source_names (original grouping retained)")
                 print(
                     f"guide metadata: mapped {len(metadata_mapping):,}/{len(guide_names):,} guides "
                     f"from {metadata_path}"
                 )
-            except Exception as exc:  # keep fallback mapping usable
+            except Exception as exc:  # retain legacy fallback only when no columns were explicit
+                if guide_col or target_col:
+                    raise
                 warnings.warn(
                     f"Guide metadata {metadata_path} could not be used ({exc}). "
                     "Falling back to guide_name.split('_', 1)[0]."
@@ -447,6 +472,7 @@ def load_and_attach_guides(
     metadata_tsv: str | None,
     metadata_guide_col: str | None,
     metadata_target_col: str | None,
+    mapping_policy: str = "source_names",
 ) -> tuple[list[str], dict[str, str]]:
     """Load guide assignments from the day-specific long CSV and attach them."""
     guide_names = list(map(str, mdata[guide_modality].var_names))
@@ -508,6 +534,7 @@ def load_and_attach_guides(
         metadata_tsv,
         metadata_guide_col,
         metadata_target_col,
+        mapping_policy=mapping_policy,
     )
     adata.uns["guide2gene"] = guide2gene
     return guide_names, guide2gene
@@ -1000,6 +1027,7 @@ def run_day(
         args.guide_metadata_tsv,
         args.guide_metadata_guide_col,
         args.guide_metadata_target_col,
+        mapping_policy=args.guide_mapping_policy,
     )
     covariates = attach_covariates(adata, require_covariates=args.require_covariates)
     inputs = prepare_inputs(programde, adata)
@@ -1010,19 +1038,14 @@ def run_day(
     )
 
     run_started = time.time()
-    out = programde.run_all_genes_union_crt(
-        inputs=inputs,
-        B=args.B,
-        n_jobs=args.n_jobs,
+    from .figure_s04_contract import run_program_crt, extract_pvalue_outputs
+    out = run_program_crt(
+        programde, inputs=inputs, B=args.B, n_jobs=args.n_jobs,
         calibrate_skew_normal=not args.no_skew,
-        return_raw_pvals=True,
-        return_skew_normal=not args.no_skew,
     )
-
-    pvals_empirical = out["pvals_raw_df"]
-    pvals_skew = out.get("pvals_df")
-    if pvals_skew is None:
-        pvals_skew = out.get("pvals_skew_df")
+    pvals_empirical, pvals_skew = extract_pvalue_outputs(
+        out, calibrate_skew_normal=not args.no_skew,
+    )
     betas = out.get("betas_df")
 
     save_wide_frame(pvals_empirical, day_output_dir / f"{day}_target_pvalues_empirical_wide.tsv")
@@ -1031,7 +1054,7 @@ def run_day(
             pvals_empirical,
             day=day,
             pvalue_type="empirical",
-            source="run_all_genes_union_crt pvals_raw_df",
+            source="run_all_genes_union_crt " + ("pvals_df" if args.no_skew else "pvals_raw_df"),
         ),
         day_output_dir / f"{day}_target_pvalues_empirical_long.tsv",
     )
@@ -1117,7 +1140,7 @@ def run_day(
         day=day,
         pvalue_type="empirical",
         ntc_labels=args.ntc_label,
-        source="observed target rows from pvals_raw_df",
+        source="observed target rows from " + ("pvals_df" if args.no_skew else "pvals_raw_df"),
     )
     ntc_empirical_points = ntc_frames_to_long(
         ntc_empirical,
@@ -1224,6 +1247,7 @@ def run_day(
         "guide_modality": guide_modality,
         "usage_path": str(usage_path),
         "guide_long_csv": str(guide_csv),
+        "guide_mapping_policy": args.guide_mapping_policy,
         "ntc_labels": args.ntc_label,
         "ntc_group_size": args.ntc_group_size,
         "ntc_ensembles": args.ntc_ensembles,
@@ -1326,6 +1350,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--guide-metadata-guide-col", default=None)
     parser.add_argument("--guide-metadata-target-col", default=None)
+    parser.add_argument("--guide-mapping-policy", choices=("source_names", "metadata"),
+                        default="source_names",
+                        help="source_names preserves the original S4 guide grouping; metadata explicitly opts into target-symbol updates.")
     parser.add_argument("--out-dir", default="results/ipsc_ec_qq_exports")
     parser.add_argument("--days", nargs="+", default=DEFAULT_DAYS)
     parser.add_argument("--k", type=int, default=50)
