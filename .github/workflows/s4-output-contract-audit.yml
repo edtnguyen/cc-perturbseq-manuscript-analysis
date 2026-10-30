@@ -30,15 +30,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Apply repair to published baseline
+      - name: Apply repair without changing original target grouping
         run: |
-          cp .repair/s4_output_contract.py .repair/apply_output_contract.py .repair/test_s4_output_contract.py /tmp/
+          cp .repair/s4_output_contract.py .repair/apply_output_contract.py .repair/test_s4_output_contract.py .repair/preserve_source_grouping.py /tmp/
           git checkout --detach 78c5fe6c014814765daf590f640adb1df79d8f07
           python -m pip install nbformat
           python /tmp/apply_output_contract.py
+          python /tmp/preserve_source_grouping.py
       - name: Install tested dependencies
         run: python -m pip install -r config/geo-reproduction-requirements.txt logomaker==0.8.7
-      - name: Execute full suite including real numerical API regression
+      - name: Execute full suite including real numerical API and actual v43 metadata
         run: |
           set -o pipefail
           git -C "$PROGRAMDE_REAL_ROOT" rev-parse HEAD
@@ -49,8 +50,8 @@ jobs:
           git config user.name 'Tri Nguyen'
           git config user.email '72826864+edtnguyen@users.noreply.github.com'
           git add src notebooks tests docs
-          git commit -m 'Fix S4 programDE output flags and safely resume completed full-day exports' -m 'Use valid no-skew flags for replicate betas and select the empirical p-value field correctly. Recognize v43 intended_target_name without corrupting missing control labels. Audit guide mapping and verify completed full-day records before optional replicate-only resume. Add real programDE synthetic numerical API tests, enforce the API in existing stubs, and preserve original CRT parameters, cNMF model, and plotting.'
-          git push origin HEAD:refs/heads/repair/s4-output-contract-candidate
+          git commit -m 'Fix S4 programDE output flags while preserving source guide grouping' -m 'Use valid no-skew flags for replicate betas and select empirical p-values correctly. Audit v43 metadata without silently renaming source targets or splitting controls. Preserve source_names grouping in both stages; metadata remapping is explicit. Verify completed full-day records before replicate-only resume. Exercise real programDE numerical API and actual v43 control metadata as well as the complete repository suite.'
+          git push origin HEAD:refs/heads/repair/s4-output-contract-reviewed
           git rev-parse HEAD | tee /tmp/s4-contract-candidate.txt
       - name: Collect reproducible validation evidence
         if: always()
