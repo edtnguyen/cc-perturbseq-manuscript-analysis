@@ -42,7 +42,7 @@ s=rep(s,'        "guide_long_csv": str(guide_csv),\n        "ntc_labels":',
         '        "guide_long_csv": str(guide_csv),\n        "guide_mapping_policy": args.guide_mapping_policy,\n        "ntc_labels":')
 p.write_text(s)
 p=r/'src/cc_perturbseq/figure_s04_compute.py';s=p.read_text()
-s=rep(s,'    guide_metadata_target_col=None,\n):','    guide_metadata_target_col=None, guide_mapping_policy="source_names",\n):')
+s=rep(s,'guide_metadata_target_col=None,\n):','guide_metadata_target_col=None, guide_mapping_policy="source_names",\n):')
 s=rep(s,'            args_for_helpers.guide_metadata_target_col,\n        )',
         '            args_for_helpers.guide_metadata_target_col,\n            mapping_policy=guide_mapping_policy,\n        )')
 p.write_text(s)
@@ -70,6 +70,10 @@ s=rep(s,'"guide_column": str(column), "n_guides": len(after),',
             "metadata_target_difference_count": len(metadata_changes),
             "metadata_target_differences": metadata_changes,
             "n_metadata_control_labels_preserved": len(metadata_control_labels),''')
+s=rep(s,'"n_name_inferred_including_controls": len(after) - len(mapped),',
+'''"n_missing_metadata_targets": len(after) - len(mapped),
+            "n_name_inferred_including_controls": (len(after) if policy == "source_names"
+                else len(after) - len(mapped) + len(metadata_control_labels)),''')
 p.write_text(s)
 p=r/'notebooks/supplementary/Figure_S04.ipynb';nb=nbformat.read(p,as_version=4)
 for c in nb.cells:
@@ -100,6 +104,8 @@ s=rep(s,'ns=dict(RECOMPUTE_CRT=True, CRT_STAGE="all", build_crt_argv=',
         'ns=dict(RECOMPUTE_CRT=True, CRT_STAGE="all", GUIDE_MAPPING_POLICY="source_names", build_crt_argv=')
 p.write_text(s)
 p=r/'tests/test_s4_output_contract.py';s=p.read_text()
+s=rep(s,"assert report['n_name_inferred_including_controls']==3",
+        "assert report['n_name_inferred_including_controls']==4\n    assert report['n_missing_metadata_targets']==3")
 s=rep(s,"report=contract.audit_guide_metadata(qqb.parse_args(['--guide-metadata-tsv',str(p)]))\n    assert report['legacy_name_difference_count']==1",
         "report=contract.audit_guide_metadata(qqb.parse_args(['--guide-metadata-tsv',str(p),'--guide-mapping-policy','metadata']))\n    assert report['legacy_name_difference_count']==1")
 s=rep(s,"audit=audit_guide_metadata(args)\nPath(sys.argv[2])",'''audit=audit_guide_metadata(args)
