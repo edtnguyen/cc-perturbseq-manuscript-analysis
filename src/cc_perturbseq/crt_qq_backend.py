@@ -1298,6 +1298,8 @@ def consolidate_outputs(model_output_root: Path, summaries: list[DayRunSummary])
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
+        prog="cc_perturbseq.crt_qq_backend",
+        allow_abbrev=False,
         description="Run iPSC-EC CRT for d0-d3 and export observed-target and non-targeting QQ points."
     )
     parser.add_argument("--programde-root", default=DEFAULT_PROGRAMDE_ROOT)
@@ -1312,7 +1314,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "{density_threshold}. If unset, files are discovered under --cnmf-dir."
         ),
     )
-    parser.add_argument("--guide-long-csv-template", default=DEFAULT_GUIDE_LONG_TEMPLATE)
+    parser.add_argument(
+        "--guide-long-csv-template", "--guide-long-template",
+        dest="guide_long_csv_template", default=DEFAULT_GUIDE_LONG_TEMPLATE,
+        help="SCEPTRE-assigned guide CSV template. The shorter flag is a compatibility alias.",
+    )
     parser.add_argument(
         "--guide-metadata-tsv",
         default="./300genes_guide_metadata_v43.tsv",

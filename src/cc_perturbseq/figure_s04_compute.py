@@ -1,9 +1,17 @@
 """Explicit opt-in CRT recomputation, ported from source cell 19."""
-def compute_replicate_betas(*, programde_root, data_dir, cnmf_dir, guide_long_template, guide_metadata_tsv, output_dir, days=("d0","d1","d2","d3"), n_jobs=4):
+def compute_replicate_betas(
+    *, programde_root, data_dir, cnmf_dir, guide_long_template,
+    guide_metadata_tsv, output_dir, days=("d0", "d1", "d2", "d3"), n_jobs=4,
+    k=50, density_threshold="0_2", ntc_labels=("SAFE", "non-targeting", "NTC"),
+    overwrite=False, cnmf_file=None, usage_file_template=None,
+    gex_modality=None, guide_modality=None,
+    guide_metadata_guide_col=None, guide_metadata_target_col=None,
+):
     PROGRAMDE_ROOT, DATA_DIR, CNMF_DIR = str(programde_root), str(data_dir), str(cnmf_dir)
-    GUIDE_LONG_TEMPLATE, GUIDE_METADATA_TSV = str(guide_long_template), str(guide_metadata_tsv)
+    GUIDE_LONG_TEMPLATE = str(guide_long_template)
+    GUIDE_METADATA_TSV = str(guide_metadata_tsv) if guide_metadata_tsv is not None else None
     OUT_DIR, DAYS, N_JOBS = str(output_dir), list(days), int(n_jobs)
-    K, DENSITY_THRESHOLD, NTC_LABELS = 50, "0_2", ["SAFE", "non-targeting", "NTC"]
+    K, DENSITY_THRESHOLD, NTC_LABELS = int(k), str(density_threshold), list(ntc_labels)
     from pathlib import Path
     from types import SimpleNamespace
     import gc
@@ -22,7 +30,7 @@ def compute_replicate_betas(*, programde_root, data_dir, cnmf_dir, guide_long_te
     # Keep B_REP small for a QC run; use a larger value only if you also need replicate p-values.
     B_REP = 127
     MIN_CELLS_PER_REPLICATE = 200
-    SKIP_EXISTING_REP_BETAS = True
+    SKIP_EXISTING_REP_BETAS = not overwrite
 
     # Output paths.
     density_token = qqb.normalize_density_token(DENSITY_THRESHOLD)
@@ -34,16 +42,16 @@ def compute_replicate_betas(*, programde_root, data_dir, cnmf_dir, guide_long_te
     programde = qqb.load_programde(PROGRAMDE_ROOT)
 
     args_for_helpers = SimpleNamespace(
-        cnmf_file=None,
-        usage_file_template=None,
+        cnmf_file=cnmf_file,
+        usage_file_template=usage_file_template,
         cnmf_dir=CNMF_DIR,
         k=K,
-        gex_modality=None,
-        guide_modality=None,
+        gex_modality=gex_modality,
+        guide_modality=guide_modality,
         ntc_label=NTC_LABELS,
         guide_metadata_tsv=GUIDE_METADATA_TSV,
-        guide_metadata_guide_col=None,
-        guide_metadata_target_col=None,
+        guide_metadata_guide_col=guide_metadata_guide_col,
+        guide_metadata_target_col=guide_metadata_target_col,
         require_covariates=True,
     )
 
@@ -110,7 +118,7 @@ def compute_replicate_betas(*, programde_root, data_dir, cnmf_dir, guide_long_te
             beta_path = day_rep_dir / f"{day}__{sample_safe}__target_betas_wide.tsv"
             meta_path = day_rep_dir / f"{day}__{sample_safe}__run_metadata.json"
 
-            if SKIP_EXISTING_REP_BETAS and beta_path.exists():
+            if SKIP_EXISTING_REP_BETAS and beta_path.is_file() and beta_path.stat().st_size > 0:
                 print(f"  {day} / {biological_sample}: using existing {beta_path}")
                 replicate_rows.append({
                     "day": day,
