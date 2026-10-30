@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: false
-      - run: git archive --format=tar.gz --output=s4-current-code.tar.gz HEAD src notebooks config tests docs scripts .github pyproject.toml
+      - run: git archive --format=tar.gz --output=s4-current-code.tar.gz HEAD src notebooks config tests docs scripts .github data
       - uses: actions/upload-artifact@v4
         with:
           name: s4-current-code
