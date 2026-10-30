@@ -53,8 +53,8 @@ multiome:
   tss_profiles: REPLACE_WITH_TSS_PROFILE_TABLE
   chrombpnet_performance: REPLACE_WITH_CHROMBPNET_PERFORMANCE_TABLE
   motif_qc: REPLACE_WITH_MOTIF_QC_TABLE
-  # Day-specific scE2G, motif-carrier-conditioned test, >=10 carriers/group.
-  enhancer_enrichment_results: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/2.tf_enrichment_in_programs/enhancer_enrichment_results_min10.tsv
+  # Canonical day-specific scE2G motif-enrichment table selected for every figure.
+  enhancer_enrichment_results: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/2.tf_enrichment_in_programs/enhancer_enrichment_results.tsv
   modisco_compiled_h5: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/results/compendium/modisco_compiled/modisco_compiled.h5
   cluster_motif_map: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/0.0.motif_id_annotation/tables/cluster_to_tf_motif_id_mapping.tsv
   motif_fdr_template: /oak/stanford/groups/engreitz/Users/ogrokhov/experiments/ec_sce2g/tfmn/results_0604/gene_TF_df_top300_genes_fdr_d{day}.txt
@@ -96,4 +96,3 @@ assets:
   s2a_ccperturbseq_schematic: REPLACE_WITH_EDITABLE_S2A_SOURCE
   s5g_motif_schematic: REPLACE_WITH_EDITABLE_S5G_SOURCE
   s8a_bmp_schematic: REPLACE_WITH_EDITABLE_S8A_SOURCE
-
