@@ -6,11 +6,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 import yaml
 
 from cc_perturbseq.figure_s02_parse_mix import (
     CAPTURE_PRIMER_ORDER,
     PRIMER_ORDER,
+    preflight_parse_mix,
     read_saturation,
     summarize_guide_pairs,
 )
@@ -52,6 +54,75 @@ def test_notebook_code_cells_compile():
                 f"{NOTEBOOK.name}:cell-{index}",
                 "exec",
             )
+
+
+def _write_nonempty(path: Path, text: str = "x\n") -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_preflight_accepts_source_directory_and_required_files(tmp_path):
+    root = tmp_path / "250730_eTN10_Parsev3_mixediPSC_K562"
+    expression_dir = (
+        root
+        / "splitpipe_out"
+        / "WT"
+        / "sub1"
+        / "all-sample"
+        / "DGE_filtered"
+    )
+    expression_dir.mkdir(parents=True)
+    _write_nonempty(expression_dir / "count_matrix.mtx")
+    _write_nonempty(expression_dir / "all_genes.csv")
+    _write_nonempty(expression_dir / "cell_metadata.csv")
+    _write_nonempty(root / "splitpipe_out" / "CRISPR_combined" / "grnaxcell_count.tsv")
+    _write_nonempty(
+        root
+        / "splitpipe_out"
+        / "CRISPR"
+        / "sub1"
+        / "all-sample"
+        / "guide_RNAs_unfiltered"
+        / "all_guides.csv"
+    )
+    for primer in PRIMER_ORDER:
+        _write_nonempty(
+            root
+            / "splitpipe_out"
+            / "WT"
+            / "sub1"
+            / primer
+            / "report"
+            / "tscp_counts_subsampled.csv"
+        )
+
+    paths = preflight_parse_mix(root)
+    assert paths["expression_dir"] == expression_dir
+    assert paths["expression_dir"].is_dir()
+    assert paths["count_matrix"].is_file()
+    assert paths["guide_counts"].is_file()
+    assert all(paths[f"saturation_{primer}"].is_file() for primer in PRIMER_ORDER)
+
+
+def test_preflight_reports_actual_missing_file_not_valid_directory(tmp_path):
+    root = tmp_path / "experiment"
+    expression_dir = (
+        root
+        / "splitpipe_out"
+        / "WT"
+        / "sub1"
+        / "all-sample"
+        / "DGE_filtered"
+    )
+    expression_dir.mkdir(parents=True)
+
+    with pytest.raises(FileNotFoundError) as exc_info:
+        preflight_parse_mix(root)
+
+    message = str(exc_info.value)
+    assert f"missing directory: {expression_dir}" not in message
+    assert f"missing file: {expression_dir / 'count_matrix.mtx'}" in message
 
 
 def test_guide_summaries_match_panel_definitions():
