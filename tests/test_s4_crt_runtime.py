@@ -41,7 +41,7 @@ def test_notebook_recompute_cell_uses_actual_builder(tmp_path):
     branch=ast.parse(''.join(cell['source'])).body[0]
     assert isinstance(branch,ast.If)
     captured=[]
-    ns=dict(RECOMPUTE_CRT=True, build_crt_argv=runtime.build_crt_argv,
+    ns=dict(RECOMPUTE_CRT=True, CRT_STAGE="all", build_crt_argv=runtime.build_crt_argv,
             launch_crt_recomputation=lambda argv, **kw: captured.append((qqb.parse_args(argv),kw)),
             display=lambda *a:None, qqb=qqb, CRT_PYTHON=sys.executable,
             PROGRAMDE_ROOT=tmp_path/'programde', DATA_DIR=tmp_path/'input', CNMF_DIR=tmp_path/'usage',
@@ -100,7 +100,10 @@ import pandas as pd
 def prepare_crt_inputs(*, adata, **kwargs):
     return adata
 
-def run_all_genes_union_crt(*,inputs,B,**kwargs):
+def run_all_genes_union_crt(*,inputs,B,calibrate_skew_normal=False,
+                            return_raw_pvals=False,return_skew_normal=False,**kwargs):
+    if (return_raw_pvals or return_skew_normal) and not calibrate_skew_normal:
+        raise ValueError("raw/skew supplemental outputs require calibration")
     k=len(inputs.uns['program_names'])
     with open(os.environ['S4_TEST_CALLS'],'a') as f:
         f.write(json.dumps({'B':B,'n':inputs.n_obs,'k':k,'python':sys.executable,
@@ -109,7 +112,10 @@ def run_all_genes_union_crt(*,inputs,B,**kwargs):
     factor=1+float(inputs.X[0,0])/100
     beta=pd.DataFrame(values*factor,index=['A','B','NTC'],columns=inputs.uns['program_names'])
     p=pd.DataFrame(np.geomspace(1e-4,0.9,3*k).reshape(3,k),index=beta.index,columns=beta.columns)
-    return {'betas_df':beta,'pvals_raw_df':p,'pvals_df':p}
+    result={'betas_df':beta,'pvals_df':p}
+    if return_raw_pvals: result['pvals_raw_df']=p
+    if return_skew_normal: result['pvals_skew_df']=p
+    return result
 
 def build_ntc_group_inputs(**kw): return [],{}, {}, {}
 def make_ntc_groups_ensemble(**kw): return {0:[]}

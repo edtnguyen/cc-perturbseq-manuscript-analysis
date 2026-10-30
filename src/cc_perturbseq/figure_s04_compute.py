@@ -25,6 +25,7 @@ def compute_replicate_betas(
     from IPython.display import display
 
     from cc_perturbseq import crt_qq_backend as qqb
+    from cc_perturbseq.figure_s04_contract import run_program_crt
 
     # For the replicate-correlation plot, beta estimates are the relevant output.
     # Keep B_REP small for a QC run; use a larger value only if you also need replicate p-values.
@@ -158,13 +159,11 @@ def compute_replicate_betas(
             inputs = qqb.prepare_inputs(programde, adata_rep)
 
             t0 = time.time()
-            out = programde.run_all_genes_union_crt(
-                inputs=inputs,
-                B=B_REP,
-                n_jobs=N_JOBS,
+            # betas_df is always returned. Raw/skew supplement flags must both
+            # be False when skew calibration is disabled in real programDE.
+            out = run_program_crt(
+                programde, inputs=inputs, B=B_REP, n_jobs=N_JOBS,
                 calibrate_skew_normal=False,
-                return_raw_pvals=True,
-                return_skew_normal=False,
             )
 
             betas = out.get("betas_df")
