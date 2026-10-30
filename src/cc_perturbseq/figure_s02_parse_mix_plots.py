@@ -49,22 +49,31 @@ def _draw_violin(
     *,
     data: pd.DataFrame,
     category_axis: str,
-    value_axis: str,
+    value_column: str,
     order,
     palette,
     ax,
 ):
     """Draw a categorical violin across seaborn 0.12 and 0.13 APIs."""
+    if category_axis not in {"x", "y"}:
+        raise ValueError(
+            f"category_axis must be 'x' or 'y'; observed {category_axis!r}."
+        )
     parameters = inspect.signature(sns.violinplot).parameters
     kwargs: dict[str, Any] = {
         "data": data,
-        category_axis: "sample",
-        value_axis: value_axis,
         "order": list(order),
         "palette": list(palette),
         "ax": ax,
         **_violin_kwargs(),
     }
+    if category_axis == "x":
+        kwargs["x"] = "sample"
+        kwargs["y"] = value_column
+    else:
+        kwargs["y"] = "sample"
+        kwargs["x"] = value_column
+
     # Seaborn 0.13 deprecates palette-without-hue. Older releases do not
     # support the legend argument, so use redundant hue only when supported.
     if "legend" in parameters:
@@ -137,7 +146,7 @@ def _cell_type_violin(
         _draw_violin(
             data=subset,
             category_axis="x",
-            value_axis=plot_value,
+            value_column=plot_value,
             order=primers,
             palette=[PRIMER_COLORS[primer] for primer in primers],
             ax=ax,
@@ -220,7 +229,7 @@ def plot_panel_m(cell_metrics: pd.DataFrame, saturation: pd.DataFrame):
     _draw_violin(
         data=transcript,
         category_axis="y",
-        value_axis="total_counts",
+        value_column="total_counts",
         order=MANUSCRIPT_TRANSCRIPT_ORDER,
         palette=[PRIMER_COLORS[p] for p in MANUSCRIPT_TRANSCRIPT_ORDER],
         ax=axes[0],
