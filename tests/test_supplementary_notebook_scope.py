@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import json
 from pathlib import Path
 
 import yaml
@@ -34,3 +37,25 @@ def test_figure_manifest_contains_only_requested_supplementary_figures():
         key for key in manifest["figures"] if key.startswith("Figure_S")
     }
     assert observed == RETAINED_MANIFEST_KEYS
+
+
+def test_retained_supplementary_notebooks_are_valid_json_and_compile():
+    for name in sorted(RETAINED_NOTEBOOKS):
+        path = SUPPLEMENTARY_DIR / name
+        notebook = json.loads(path.read_text(encoding="utf-8"))
+
+        assert notebook["nbformat"] == 4
+        assert isinstance(notebook.get("cells"), list)
+        assert notebook["cells"], f"{name} contains no cells"
+
+        for index, cell in enumerate(notebook["cells"]):
+            assert cell.get("cell_type") in {"markdown", "code", "raw"}
+            assert isinstance(cell.get("source", []), (str, list))
+            if cell.get("cell_type") == "code":
+                compile(
+                    "".join(cell.get("source", []))
+                    if isinstance(cell.get("source", []), list)
+                    else cell.get("source", ""),
+                    f"{name}:cell-{index}",
+                    "exec",
+                )

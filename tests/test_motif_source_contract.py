@@ -38,7 +38,10 @@ MODISCO_H5 = (
 def _notebook_text(path: Path) -> str:
     notebook = json.loads(path.read_text(encoding="utf-8"))
     return "\n".join(
-        "".join(cell.get("source", [])) for cell in notebook["cells"]
+        "".join(cell.get("source", []))
+        if isinstance(cell.get("source", []), list)
+        else cell.get("source", "")
+        for cell in notebook["cells"]
     )
 
 
@@ -116,7 +119,11 @@ def test_figure_s6_runs_recovered_notebook_with_selected_paths():
     assert MODISCO_H5 in text
     assert "modisco_compiled_profile" in text
     assert "patch_source_notebook" in text
-    assert "'source_logic_changed':False" in text.replace(" ", "")
+    normalized = text.replace(" ", "")
+    assert (
+        '"source_logic_changed":False' in normalized
+        or "'source_logic_changed':False" in normalized
+    )
     assert "plot_multi_day_annotation" not in text
 
 
@@ -131,8 +138,8 @@ def test_figure_s4_is_exact_previous_notebook_driver_for_b_c():
     )
     assert '"panels": ["b", "c"]' in text
     assert "collect_s4_source_outputs" in text
-    assert 'source_logic_changed\\": False' in text
-    assert 'source_style_changed\\": False' in text
+    assert '"source_logic_changed": False' in text
+    assert '"source_style_changed": False' in text
     assert "plot_crt_qq" not in text
     assert "plot_replicate_effects" not in text
 
@@ -143,8 +150,9 @@ def test_retained_motif_notebook_code_cells_compile():
         notebook = json.loads(path.read_text(encoding="utf-8"))
         for index, cell in enumerate(notebook["cells"]):
             if cell.get("cell_type") == "code":
+                source = cell.get("source", [])
                 compile(
-                    "".join(cell.get("source", [])),
+                    "".join(source) if isinstance(source, list) else source,
                     f"{name}:cell-{index}",
                     "exec",
                 )
