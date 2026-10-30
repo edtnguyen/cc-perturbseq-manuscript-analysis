@@ -1,0 +1,20 @@
+name: S4 runtime audit
+on:
+  push:
+    branches: [repair/s4-crt-runtime]
+    paths: [.github/workflows/s4-runtime-audit.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - run: git archive --format=tar.gz --output=s4-current-code.tar.gz HEAD src notebooks config tests docs scripts .github pyproject.toml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: s4-current-code
+          path: s4-current-code.tar.gz
+          retention-days: 3
