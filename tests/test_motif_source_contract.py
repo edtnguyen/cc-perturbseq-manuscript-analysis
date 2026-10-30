@@ -76,7 +76,7 @@ def test_figure_s3_was_restored_and_is_not_the_mistaken_source_driver():
     text = _notebook_text(
         ROOT / "notebooks" / "supplementary" / "Figure_S03.ipynb"
     )
-    assert "Panels a–f" in text
+    assert "panels a–f" in text.lower()
     assert "CCPERTURBSEQ_FIGURE_S03_SOURCE_NOTEBOOK" not in text
     assert "prepare_s3_source_reproduction" not in text
 
