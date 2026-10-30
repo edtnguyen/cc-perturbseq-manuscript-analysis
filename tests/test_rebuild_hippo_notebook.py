@@ -38,16 +38,30 @@ def test_rebuild_notebook_uses_regenerated_sublibraries():
     assert "20260325_Hippo_timecourse/Hippo_timecourse_combined.h5ad" not in source
 
 
-def test_pre_qc_difference_cannot_bypass_strict_post_qc_validation():
+def test_historical_counts_are_diagnostic_but_reference_stays_strict():
     _, source = _sources()
 
-    # The reconstructed intermediate can differ by low-quality pre-QC barcodes,
-    # but the exact historical final cohort remains mandatory.
-    assert "pre_qc_shape_is_diagnostic" in source
+    assert "ENFORCE_EXACT_HISTORICAL_COUNTS = False" in source
+    assert "STRICT_REFERENCE = True" in source
+    assert 'read_spectra(SPECTRA_TPM, strict_historical=STRICT_REFERENCE)' in source
+    assert "historical_count_diagnostics" in source
+    assert '"acceptance_role": "diagnostic_only"' in source
+    assert 'validate_combined(QUERY_H5AD, strict_historical=False)' in source
+    assert "combined_receipt_path" not in source
+    assert "except Exception" not in source
+    assert "QUERY_H5AD.unlink" not in source
+
+
+def test_projection_is_non_strict_for_cell_totals_but_fully_validated():
+    _, source = _sources()
+
+    assert "project_top_specific_200" in source
     assert "strict_historical=False" in source
-    assert "QUERY_H5AD, strict_historical=STRICT_HISTORICAL" in source
-    assert "combined_receipt_path(QUERY_H5AD).unlink" in source
-    assert "exact post-QC shape and all 54 per-sample counts" in source
+    assert "validate_projected" in source
+    assert "projection_historical_comparison" in source
+    assert "validate_hippo_panel_inputs" in source
+    assert "write_hippo_overrides" in source
+    assert 'notebook_names=("Figure_03.ipynb", "Figure_04.ipynb")' in source
 
 
 def test_rebuild_notebook_replaces_stale_artifacts_and_runs_figures():
@@ -57,10 +71,6 @@ def test_rebuild_notebook_replaces_stale_artifacts_and_runs_figures():
     assert "FORCE_REBUILD_ALL = False" in source
     assert "except FileExistsError as exc:" in source
     assert "overwrite=True" in source
-    assert 'notebook_names=("Figure_03.ipynb", "Figure_04.ipynb")' in source
-    assert "validate_projected" in source
-    assert "validate_hippo_panel_inputs" in source
-    assert "write_hippo_overrides" in source
     assert "execute_figure_notebooks" in source
 
 
