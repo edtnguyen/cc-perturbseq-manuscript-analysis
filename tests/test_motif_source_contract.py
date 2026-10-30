@@ -106,10 +106,11 @@ def test_figure_s6_runs_recovered_notebook_with_selected_paths():
     text = _notebook_text(
         ROOT / "notebooks" / "supplementary" / "Figure_S06.ipynb"
     )
+    compact = "".join(text.split())
     assert (
         "program_annotation_panels_D0_D1_D2_D3_rotated_logos_"
         "D2_extra_D3_trimmed_markers.ipynb"
-    ) in text
+    ) in compact
     assert (
         "b0ea563bee36408e54ff793e4915a7258232473a65813bba2bb5d7b5f655599a"
         in text
