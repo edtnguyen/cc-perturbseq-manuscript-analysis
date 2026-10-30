@@ -34,3 +34,10 @@ python scripts/preflight_main_figure_notebooks.py --check-data --check-runtime
 ```
 
 To include the reconstruction notebook in the static/runtime audit, add `--include-hippo-rebuild`. Source notebook archives under `recovery/` are provenance records, not Run All entry points. Execution receipts and comparison with manuscript references determine the actual reproduction status.
+
+## Standalone implementations
+
+See [the source-port audit](../docs/STANDALONE_FIGURE_REPRODUCTION.md). S4 and S6
+now execute repository calculations directly; neither requires the old notebooks.
+S4 redraws from numerical Q-Q/replicate beta inputs by default, with explicit
+opt-in raw CRT recomputation. S2 uses the recovered plotnine paper-panel style.

@@ -102,48 +102,8 @@ def test_figure3_and_figure4_lock_all_three_motif_inputs():
         assert "configured_modisco_h5=modisco_h5_path" in text
 
 
-def test_figure_s6_runs_recovered_notebook_with_selected_paths():
-    text = _notebook_text(
-        ROOT / "notebooks" / "supplementary" / "Figure_S06.ipynb"
-    )
-    # The path is deliberately assembled from adjacent string literals in the
-    # source cell, so verify its frozen semantic components instead of a
-    # serialization-dependent contiguous source substring.
-    assert "program_annotation_panels_D0_D1_D2_D3_" in text
-    assert "rotated_logos_D2_extra_" in text
-    assert "D3_trimmed_markers.ipynb" in text
-    assert (
-        "b0ea563bee36408e54ff793e4915a7258232473a65813bba2bb5d7b5f655599a"
-        in text
-    )
-    assert ENRICHMENT in text
-    assert CLUSTER_MAP in text
-    assert MODISCO_H5 in text
-    assert "modisco_compiled_profile" in text
-    assert "patch_source_notebook" in text
-    normalized = text.replace(" ", "")
-    assert (
-        '"source_logic_changed":False' in normalized
-        or "'source_logic_changed':False" in normalized
-    )
-    assert "plot_multi_day_annotation" not in text
 
 
-def test_figure_s4_is_exact_previous_notebook_driver_for_b_c():
-    text = _notebook_text(
-        ROOT / "notebooks" / "supplementary" / "Figure_S04.ipynb"
-    )
-    assert "iPSC_EC_QQ_full_covariates_with_replicate_correlation.ipynb" in text
-    assert (
-        "6e80625abd9b5e71d45da6dd19e888898318d39a159a7ac35600fc1d85489e87"
-        in text
-    )
-    assert '"panels": ["b", "c"]' in text
-    assert "collect_s4_source_outputs" in text
-    assert '"source_logic_changed": False' in text
-    assert '"source_style_changed": False' in text
-    assert "plot_crt_qq" not in text
-    assert "plot_replicate_effects" not in text
 
 
 def test_retained_motif_notebook_code_cells_compile():

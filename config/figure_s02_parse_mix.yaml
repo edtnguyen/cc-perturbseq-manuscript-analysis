@@ -1,13 +1,13 @@
-# Canonical source experiment for Figure S2 panels i, j, l, m and n.
-# Override on another machine by exporting CCPERTURBSEQ_FIGURE_S02_ROOT.
 experiment_root: /oak/stanford/groups/engreitz/Users/tri/Perturb-Seq/analysis/250730_eTN10_Parsev3_mixediPSC_K562
 override_environment_variable: CCPERTURBSEQ_FIGURE_S02_ROOT
-source_notebook: recovery/raw_downloads/250904.Parse.v3.iPSC.K562.copy.ipynb
+source_notebook: K562_hiPSC_ParseV3_plotnine_figure_reproduction.ipynb
 panels:
-  - i
-  - j
-  - l
-  - m
-  - n
+- i
+- j
+- l
+- m
+- n
 excluded_panels:
-  k: Gene-detection saturation from the earlier hiPSC-only benchmark, not the mixed hiPSC-K562 experiment.
+  k: Gene-detection saturation from the earlier hiPSC-only benchmark, not the mixed
+    hiPSC-K562 experiment.
+source_role: provenance_only_not_a_runtime_input

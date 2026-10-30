@@ -215,13 +215,13 @@ figures:
     panels:
       - panel: b
         description: Day-specific empirical CRT Q–Q plots for real and NTC pseudo-targets
-        type: source_notebook
+        type: code
         required_inputs: []
         candidate_sources:
           - programDE/notebooks/iPSC_EC_QQ_full_covariates_with_replicate_correlation_bundle/iPSC_EC_QQ_full_covariates_with_replicate_correlation.ipynb
       - panel: c
         description: Biological-replicate concordance of matched target-by-program effect sizes
-        type: source_notebook
+        type: code
         required_inputs: []
         candidate_sources:
           - programDE/notebooks/iPSC_EC_QQ_full_covariates_with_replicate_correlation_bundle/iPSC_EC_QQ_full_covariates_with_replicate_correlation.ipynb
@@ -233,7 +233,7 @@ figures:
     panels:
       - panel: all
         description: Aligned perturbation-effect, gene-loading and motif-enrichment heatmaps for D0–D3
-        type: source_notebook
+        type: code
         required_inputs: []
         candidate_sources:
           - programDE/notebooks/program_annotation_panels_D0_D1_D2_D3_rotated_logos_D2_extra_D3_trimmed_markers.ipynb

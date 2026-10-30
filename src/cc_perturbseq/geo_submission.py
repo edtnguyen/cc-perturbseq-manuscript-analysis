@@ -22,7 +22,7 @@ from scipy import sparse
 SCHEMA = "ccperturbseq.geo.v1"
 HIPPO_FILENAME = "Hippo_timecourse_integrated.h5mu"
 MIX_FILENAME = "iPSC_K562_mixed_integrated.h5mu"
-BASE_FIGURE_COMMIT = "5c44f6adcd6ec11a42a5094391facdcb989aee19"
+BASE_FIGURE_COMMIT = "a69cecdd1ed12625fff5b5fef7b4561d3bc78e18"  # source baseline; implementation hashes below identify the port
 METRIC_COLUMNS = (
     "total_guide_umis", "top_guide_umis", "K562_guide_umis",
     "hiPSC_guide_umis", "K562_guide_umis_ge3", "hiPSC_guide_umis_ge3",
@@ -70,7 +70,7 @@ def _code_record() -> dict[str, Any]:
     here = Path(__file__).resolve().parent
     names = ("geo_submission.py", "hippo_projection.py", "figure3_panels_legacy.py",
              "figure4_panels_legacy.py", "figure_s02_parse_mix_data.py",
-             "figure_s02_parse_mix_plots.py", "figure_s02_parse_mix_preflight.py")
+             "figure_s02_parse_mix_plots.py", "figure_s02_source_plotnine.py", "figure_s02_parse_mix_preflight.py")
     return {name: file_checksums(here / name)["sha256"] for name in names}
 
 
@@ -299,7 +299,7 @@ def build_mix_bundle(root, *, frozen_metrics_csv=None):
     reassigning lineages. Otherwise the existing S2 classifier is run once.
     """
     import anndata as ad
-    s2 = _mix_producers()  # Installs the fixed directory-aware preflight first.
+    s2 = _mix_producers()  # Direct repository producers; no notebook/archive dependency.
     from .figure_s02_parse_mix_data import (read_expression_and_qc,
         assign_transcriptomic_cell_types, _canonical_cell_ids, _guide_pool)
     rna, paths = read_expression_and_qc(Path(root))

@@ -1,0 +1,112 @@
+{
+  "Figure_S06": {
+    "source": "recovery/sherlock_notebook_text/oak/stanford/groups/engreitz/Users/tri/CodeBase/programDE/notebooks/program_annotation_panels_D0_D1_D2_D3_rotated_logos_D2_extra_D3_trimmed_markers.ipynb.md",
+    "source_cells_zero_based": [
+      4,
+      6,
+      8
+    ],
+    "source_file_sha256": "2c73bdae1183b2b6b0fbe9599f27f543d3d39f318fec4ef7e57109920dcd655d",
+    "ported_file": "src/cc_perturbseq/figure_s06_annotations.py",
+    "original_function_ast_sha256": {
+      "normalize_token": "48d132ab857b4af9164e5bc819d8df00bf05ed1868fa1b0f56399a1a2b0e11fc",
+      "parse_program_num": "cd6c5b04c2565f3e1da1fc4fef8cbe2e8246d468575704d8908426cfeec86ba7",
+      "split_feature_text": "48891079c3241002073d8f5ad7143941af69a059933a9a9dafc81c9eb8aca1ea",
+      "star_text": "b3ee65ac9a00f8f967e30460682a282c65d894cc6f72fef70dd3ca3217e49f33",
+      "read_matrix_flex": "ffcb766f10e048929fe4a2e666eaf16c4a4fd2a0de10dc9204f40c0afc41ee34",
+      "read_consensus_matrix": "216d4ec181059fff8b8c1dd16dbe07aa586481bc488089342b21176c261728a1",
+      "build_program_row_lookup": "12c5b5573cb729ba5e03e167ff0e8c9b519fa7452001bc339c9630f4e82c5bc1",
+      "choose_program_offset": "a291fe7bbc40b67d58f666c6eee94de639387d4a0bdeaef31f98fe3eb1a9ed11",
+      "load_program_metadata": "b7573e18aa37319fefa655f948941792edd9c48cc4695f332696847a70cac6ea",
+      "load_perturbation_associations": "dffec5aec92bf2cbb87ae408fe71031e918728c65679ce4e38bcc118fc23db06",
+      "select_top_regulators_for_programs": "5c8d2f16e1a9dc2b86ef97aabf470b042bf5d6aa6954c6cd6c5d3c349ee95f9d",
+      "build_regulator_matrices": "22eb66a1ef006a30b9897e85ec2e25a2ecec33536b30d472b6280b5463d332f6",
+      "select_marker_genes_for_programs": "ab5180d9ea1add6ec733d413bbbad0c87c357c03a44611696a3b9a87164ee4e2",
+      "build_marker_loading_matrix": "5a15082c808cdc9dbb54638d59fd5c3364dce5d4ddd3e76031b174b85ba98909",
+      "load_enhancer_enrichment": "763326f34a8326fb825e634bf5e62e1f67f81e0d56c9620d6644f2aacbe9027b",
+      "select_top_motifs_for_programs": "caa98a2fa0ac0ceab9ef6c0bc7753a5b751a59f3d1d7ff1e53cf9a905222b12f",
+      "build_motif_matrices": "1c417a79990c440a1b06606d6e2e5cfa6e040e4ef3f9cdb332713852a1ee783c",
+      "infer_cluster_map_columns": "91c14cb560fb4bc6c6b7c1ffd33d1341f169199da143379144d1054b0b2326f0",
+      "motif_alias_variants": "dfc4bd0f46c8d30bc1dec991deded3b7d1f952042faea9f03f9200f0b8706aec",
+      "build_cluster_lookup": "ab4cc4fac68bbd4c4133905d63daaf19908b460654b8b3608711823febad710c",
+      "best_cluster_for_motif": "0284127a15c1e85518dcbb1593ff81fbae559552a410e7fca3d2559ad18abd4b",
+      "load_cluster_cwms": "a57940851a58af981284d32c17e3ed514dba9db6bf99776c0237a0a6c4abf290",
+      "cwm_to_df": "d89d96f3b2b5dcfc1f0729a743c213d0fa5c512bd224bba0f088475ccfdcf377",
+      "resolve_logo_paths_for_motifs": "a6b83ac54ed0fe9b5851132459171edb6d2c51ab964be345da910467ab4c598a",
+      "_finite_values": "bc2b03a65423709dca814761ebb63a633d3f3e4d066628c9887340c780c130c0",
+      "compute_shared_color_scales": "b7c1a00e5416e3fe298accf1b33c5f2db8de96c9e05668c04793878b6d8381cc",
+      "text_color_for_value": "30c69494a4573262f269c086f805e3878fd7cb66a8a3064b46f3f997e751828b",
+      "draw_rect_heatmap": "b8172a2bcc31f9e6c27580f6dc907af84d6023d357a26da2ac2a8c8b6e243675",
+      "add_horizontal_colorbar": "b9180f8962072ed219bf12a5384d1a6d361cc46c875c3825192182a5dfc4f56e",
+      "add_rotated_logo_strip": "1e256d1ada9f13abd7d6e5288de64fe6b56220ef82b7acc6673c3c51b80d41df",
+      "_prepare_day_matrices": "5015a4cf5f79f66cdebec99321368a1933b3d13c05a187b7f43f7afa5223b7a4",
+      "make_per_day_panel": "d3a2bd71dd2ceffc9e1d75ef96ab384f72495118c78ef4e95e95b8e3c8f02c22",
+      "make_combined_all_days_figure": "c9ff01ebd93e493dc56a8052d026d58c7e52d2cd8a691cfe292985510c00e9e8"
+    },
+    "runtime_source_notebook_required": false,
+    "documented_function_adaptations": {
+      "_draw_rotated_vector_logo": {
+        "source_ast_sha256": "adc9ef772bd70fa26048a7da4410bc1dc120d425abbbdde6b4fbc64f6841cc5e",
+        "ported_ast_sha256": "1b4cb04e6322470587c95bcfe769f401fb1b961ef3c9194c9d487e9fd4522c87",
+        "reason": "Preserve physical 90-degree glyph placement across DPI changes and tight bounding-box vector/raster exports; no numerical or selection change."
+      }
+    }
+  },
+  "Figure_S04": {
+    "source": "recovery/raw_downloads/iPSC_EC_QQ_full_covariates_with_replicate_correlation_bundle/iPSC_EC_QQ_full_covariates_with_replicate_correlation.ipynb",
+    "source_cells_zero_based": [
+      13,
+      21
+    ],
+    "source_file_sha256": "0c78e7e903994e720529f620ed3f1fa6ebbaccd64d8ebd970744f5426bbc874f",
+    "ported_file": "src/cc_perturbseq/figure_s04_panels.py",
+    "original_function_ast_sha256": {
+      "_qq_columns_for_one_series": "cf7ba8f3ed10ed73f287dcab86cde8fd3c5b86d69233ffde72cbff36aa3d91d9",
+      "plot_ipsc_ec_qq": "58cf7ca92510ba3b5e3875022395d7aeea6c31d634c89d83c20c0fcec4c29c2c",
+      "read_beta_wide_as_long": "c3d44c3ebbcb31ae2003e009064146724a45495473d8cfb2cf66244e1a0e6694",
+      "format_correlation": "d65d946f8f301ed790c6d35c9dce7065afc6f73ed2c01c26b699f8d7bf055529",
+      "save_plotnine_formats": "f796d5a8cc396fa0568ead2e7261c851b3d78c92abda29f1450a52fd4aca9a80",
+      "build_effect_pair_table": "35fee1c47f76b88280c171943b0bd416ab34c4be2aab46488f721967d6ebd559",
+      "summarize_effect_pairs": "b787b05a7df82fae20149683c67c01f78d841c5a6ee8b05d07b9317de03ffd1a",
+      "plot_effect_correlation": "0e5bde1842b9d1e7250c6c988ad1133aabaa77809707e5ff2fb2c643c30c4050"
+    },
+    "runtime_source_notebook_required": false
+  },
+  "Figure_S02": {
+    "source": "recovery/raw_downloads/K562_hiPSC_ParseV3_plotnine_figure_reproduction.ipynb",
+    "source_cells_zero_based": [
+      6,
+      39
+    ],
+    "source_file_sha256": "a5be2fe6317cecf83e42fd80a1e45396a810e565001249797a07218439e8b5bb",
+    "ported_file": "src/cc_perturbseq/figure_s02_source_plotnine.py",
+    "original_function_ast_sha256": {
+      "normalize_cell_id": "3dba3a6832cf8f93c62ae0d9855bf64e64f77a55e47cc1c0d61fbc1a368094df",
+      "ordered_sample": "af6a889005f1d507a5c52db3e06563e065b5459a52b5b7eaf63046732d5d5bc1",
+      "first_existing": "30679fee9b6bcec2293730d2844c46ebf7f11a22c517ac9234effe28bacbbc90",
+      "theme_publication": "c7189566a7471c2b8e9ac6a403c5e15df002978cf04c55dd1045ec90f9143926",
+      "make_top_guide_panel": "c6a008b73aaa884988b1023ee3a953f8759ee6623daffc6de2288839a36652a7"
+    },
+    "runtime_source_notebook_required": false
+  },
+  "Figure_01": {
+    "notebook": "notebooks/main/Figure_01.ipynb",
+    "runtime_source_notebook_required": false,
+    "change": "audited; accepted scientific code and style unchanged"
+  },
+  "Figure_02": {
+    "notebook": "notebooks/main/Figure_02.ipynb",
+    "runtime_source_notebook_required": false,
+    "change": "audited; accepted scientific code and style unchanged"
+  },
+  "Figure_03": {
+    "notebook": "notebooks/main/Figure_03.ipynb",
+    "runtime_source_notebook_required": false,
+    "change": "audited; accepted scientific code and style unchanged"
+  },
+  "Figure_04": {
+    "notebook": "notebooks/main/Figure_04.ipynb",
+    "runtime_source_notebook_required": false,
+    "change": "audited; accepted scientific code and style unchanged"
+  }
+}

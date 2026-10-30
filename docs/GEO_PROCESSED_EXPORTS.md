@@ -70,3 +70,12 @@ PYTHONPATH=src python -m pytest -q tests/test_geo_submission.py
 ```
 
 The public test needs the repository's existing plotting dependencies (`scanpy`, `plotnine`, `seaborn`, etc.), but no external scientific data files. Hippo regeneration materializes temporary local H5ADs to call the unchanged path-based producers; allow disk space for that extraction. Run the large study export on a compute node.
+
+## Figure-port revision
+
+S2 plotting now uses the re-scripted plotnine paper-panel source rather than the
+previous seaborn approximation. Run S2, review its outputs, and pass the saved
+`Figure_S02_all_cell_metrics.csv.gz` as `S2_FROZEN_METRICS` when preparing the
+release. Existing mixed-cell H5MU exports retain the labels/reference tables of
+the producer version that created them; regenerate that release after accepting
+the corrected S2 run. Hippo calculations are unchanged.

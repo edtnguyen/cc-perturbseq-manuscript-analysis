@@ -21,8 +21,8 @@ from scipy import sparse
 from scipy.io import mmread
 
 
-SOURCE_NOTEBOOK = "recovery/raw_downloads/250904.Parse.v3.iPSC.K562.copy.ipynb"
-SOURCE_NOTEBOOK_GIT_BLOB = "ff940a4b35204cba38db1e453b9968d07372771d"
+SOURCE_NOTEBOOK = "K562_hiPSC_ParseV3_plotnine_figure_reproduction.ipynb"
+SOURCE_NOTEBOOK_GIT_BLOB = "dca9056c407d773b5a1f75382ae5e6412c06d708"
 PRIMER_ORDER = ("CS1", "DC1", "Dual", "no_guide")
 CAPTURE_PRIMER_ORDER = ("CS1", "DC1", "Dual")
 MANUSCRIPT_TRANSCRIPT_ORDER = ("no_guide", "Dual", "DC1", "CS1")
@@ -107,32 +107,7 @@ def _required_paths(root: Path) -> dict[str, Path]:
     }
 
 
-def preflight_parse_mix(root: Path) -> dict[str, Path]:
-    paths = _required_paths(root)
-    missing = [
-        str(path)
-        for key, path in paths.items()
-        if key != "root" and (not path.is_file() or path.stat().st_size == 0)
-    ]
-    for primer in PRIMER_ORDER:
-        saturation = (
-            paths["root"]
-            / "splitpipe_out"
-            / "WT"
-            / "sub1"
-            / primer
-            / "report"
-            / "tscp_counts_subsampled.csv"
-        )
-        paths[f"saturation_{primer}"] = saturation
-        if not saturation.is_file() or saturation.stat().st_size == 0:
-            missing.append(str(saturation))
-    if missing:
-        raise FileNotFoundError(
-            "Missing or empty Parse-v3 mixed hiPSC–K562 inputs:\n  "
-            + "\n  ".join(missing)
-        )
-    return paths
+from .figure_s02_parse_mix_preflight import preflight_parse_mix
 
 
 def read_expression_and_qc(root: Path):
@@ -253,17 +228,11 @@ def assign_transcriptomic_cell_types(adata) -> tuple[pd.Series, pd.DataFrame]:
     )
 
     def classify(row: pd.Series) -> str:
-        k562 = float(row["K562_marker_score"])
-        hipsc = float(row["hiPSC_marker_score"])
-        if max(k562, hipsc) <= 0 or np.isclose(k562, hipsc):
-            return "unassigned"
-        return "K562" if k562 > hipsc else "hiPSC"
+        return "K562" if row["K562_marker_score"] > row["hiPSC_marker_score"] else "hiPSC"
 
     cluster_scores["cell_type"] = cluster_scores.apply(classify, axis=1)
     mapping = cluster_scores["cell_type"].to_dict()
     cell_types = clusters.map(mapping).astype("object")
-    no_detected_marker = per_cell_scores.max(axis=1).le(0)
-    cell_types.loc[no_detected_marker] = "unassigned"
     cell_types.name = "cell_type"
     return cell_types, cluster_scores.reset_index()
 
