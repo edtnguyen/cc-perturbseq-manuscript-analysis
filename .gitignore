@@ -10,6 +10,7 @@ __pycache__/
 # Generated outputs and audit receipts
 results/
 reproduction_audit/
+geo_release/
 
 # Large scientific objects
 *.h5ad
