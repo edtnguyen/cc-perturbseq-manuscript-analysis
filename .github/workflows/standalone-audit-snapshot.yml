@@ -24,6 +24,7 @@ jobs:
           python-version: '3.11'
       - name: Decode verified development migration
         run: |
+          cp .repair/post_migration.py /tmp/post_migration.py
           python - <<'PY'
           from pathlib import Path
           import base64, hashlib, json, lzma
@@ -40,12 +41,13 @@ jobs:
           python -m pip install nbformat PyYAML
           python /tmp/migration.py
           cp /tmp/test_standalone_figure_ports.py tests/test_standalone_figure_ports.py
+          python /tmp/post_migration.py
       - name: Install tested scientific environment
         run: python -m pip install -r config/geo-reproduction-requirements.txt logomaker
-      - name: Execute standalone notebook and GEO roundtrip tests
+      - name: Execute all repository tests including complete standalone figure notebooks
         run: |
           set -o pipefail
-          PYTHONPATH=src python -m pytest -q --basetemp=/tmp/standalone-fixtures tests/test_standalone_figure_ports.py tests/test_figure_s02_parse_mix.py tests/test_supplementary_notebook_scope.py tests/test_motif_source_contract.py tests/test_geo_submission.py 2>&1 | tee /tmp/standalone-tests.log
+          PYTHONPATH=src python -m pytest -q --basetemp=/tmp/standalone-fixtures tests 2>&1 | tee /tmp/standalone-tests.log
           python scripts/preflight_main_figure_notebooks.py
       - name: Save tested candidate on isolated branch
         run: |
