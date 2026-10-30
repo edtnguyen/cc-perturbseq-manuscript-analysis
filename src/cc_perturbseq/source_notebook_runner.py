@@ -1,7 +1,7 @@
 """Run existing source notebooks without replacing their scientific logic."""
 from __future__ import annotations
 
-from hashlib import sha256
+from hashlib import sha1, sha256
 import json
 import os
 from pathlib import Path
@@ -12,6 +12,17 @@ from typing import Mapping, Sequence
 def sha256_file(path: str | Path) -> str:
     digest = sha256()
     with Path(path).open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def git_blob_sha1_file(path: str | Path) -> str:
+    """Return the SHA-1 used by Git for a regular blob containing ``path``."""
+    path = Path(path)
+    digest = sha1()
+    digest.update(f"blob {path.stat().st_size}\0".encode("utf-8"))
+    with path.open("rb") as handle:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
@@ -73,7 +84,7 @@ def patch_source_notebook(
         name: replace_path_assignment(notebook, name, path)
         for name, path in path_replacements.items()
     }
-    notebook.metadata.setdefault("cc_perturbseq", {}).update(
+    notebook.metada.setdefault("cc_perturbseq", {}).update(
         {
             "source_notebook": str(source_path),
             "source_sha256": observed,
@@ -142,7 +153,9 @@ def discover_notebook(
         text = _notebook_text(path)
         missing = [tuple(g) for g in required_token_groups if not _contains_group(text, g)]
         if missing:
-            raise ValueError(f"Explicit source notebook lacks token groups: {missing}")
+            raise ValueError(
+                f"Explicit source notebook lacks token groups: {missing}"
+            )
         return path, [{"path": str(path), "score": sum(t.lower() in text for t in preferred_tokens), "explicit": True}]
 
     skip = {".git", ".ipynb_checkpoints", "__pycache__", "archive", "archives", "cache", "env", "envs", "outputs", "results", "tmp"}
@@ -173,14 +186,14 @@ def discover_notebook(
     rows.sort(key=lambda row: (-row["score"], row["path"]))
     best = [row for row in rows if row["score"] == rows[0]["score"]]
     if len(best) != 1:
-        raise RuntimeError("Source-notebook discovery is ambiguous; set the explicit source-notebook environment variable: " + json.dumps(best, indent=2))
+        raise RuntimeError(
+            "Source-notebook discovery is ambiguous; set the explicit source-notebook environment variable: "
+            + json.dumps(best, indent=2)
+        )
     return Path(best[0]["path"]), rows
 
 
-from .s3_source_runner import SourceCellMatch, identify_s3_bc_cells, prepare_s3_source_reproduction  # noqa: E402
-
 __all__ = [
-    "SourceCellMatch", "discover_notebook", "execute_notebook",
-    "identify_s3_bc_cells", "patch_source_notebook",
-    "prepare_s3_source_reproduction", "replace_path_assignment", "sha256_file",
+    "discover_notebook", "execute_notebook", "git_blob_sha1_file",
+    "patch_source_notebook", "replace_path_assignment", "sha256_file",
 ]
