@@ -1,0 +1,75 @@
+name: S4 real programDE output contract
+on:
+  push:
+    branches: [repair/s4-output-contract]
+    paths: ['.github/workflows/s4-output-contract-audit.yml', '.repair/**']
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      NUMBA_NUM_THREADS: '2'
+      PROGRAMDE_REAL_ROOT: ${{ github.workspace }}/_programde_validation
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: edtnguyen/programDE
+          ref: 11cfa3f5d9c8d400c15cd15e1e550fc11fe0f4f9
+          path: _programde_validation
+          lfs: false
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply repair to published baseline
+        run: |
+          cp .repair/s4_output_contract.py .repair/apply_output_contract.py .repair/test_s4_output_contract.py /tmp/
+          git checkout --detach 78c5fe6c014814765daf590f640adb1df79d8f07
+          python -m pip install nbformat
+          python /tmp/apply_output_contract.py
+      - name: Install tested dependencies
+        run: python -m pip install -r config/geo-reproduction-requirements.txt logomaker==0.8.7
+      - name: Execute full suite including real numerical API regression
+        run: |
+          set -o pipefail
+          git -C "$PROGRAMDE_REAL_ROOT" rev-parse HEAD
+          PYTHONPATH=src python -m pytest -q --basetemp=/tmp/s4-contract-fixtures tests 2>&1 | tee /tmp/s4-contract-tests.log
+          python scripts/preflight_main_figure_notebooks.py
+      - name: Publish only tested source changes
+        run: |
+          git config user.name 'Tri Nguyen'
+          git config user.email '72826864+edtnguyen@users.noreply.github.com'
+          git add src notebooks tests docs
+          git commit -m 'Fix S4 programDE output flags and safely resume completed full-day exports' -m 'Use valid no-skew flags for replicate betas and select the empirical p-value field correctly. Recognize v43 intended_target_name without corrupting missing control labels. Audit guide mapping and verify completed full-day records before optional replicate-only resume. Add real programDE synthetic numerical API tests, enforce the API in existing stubs, and preserve original CRT parameters, cNMF model, and plotting.'
+          git push origin HEAD:refs/heads/repair/s4-output-contract-candidate
+          git rev-parse HEAD | tee /tmp/s4-contract-candidate.txt
+      - name: Collect reproducible validation evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/s4-contract-evidence
+          cp /tmp/s4-contract-tests.log /tmp/s4-contract-candidate.txt /tmp/s4-contract-evidence/ 2>/dev/null || true
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          root=Path('/tmp/s4-contract-fixtures')
+          for p in root.rglob('*'):
+              if p.is_file() and p.name in {'real_programde.log','real_programde_report.json','execution.log','s4_crt.log','s4_crt_runtime.json'}:
+                  dest=Path('/tmp/s4-contract-evidence')/p.relative_to(root)
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(p,dest)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s4-real-contract-validation
+          path: /tmp/s4-contract-evidence
+          retention-days: 7
