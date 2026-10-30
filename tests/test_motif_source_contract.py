@@ -116,7 +116,7 @@ def test_figure_s6_runs_recovered_notebook_with_selected_paths():
     assert MODISCO_H5 in text
     assert "modisco_compiled_profile" in text
     assert "patch_source_notebook" in text
-    assert "'source_logic_changed': False" in text
+    assert "'source_logic_changed':False" in text.replace(" ", "")
     assert "plot_multi_day_annotation" not in text
 
 
