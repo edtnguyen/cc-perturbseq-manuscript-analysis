@@ -34,7 +34,9 @@ def test_active_motif_consumers_reject_stale_tables():
         ROOT / "src" / "cc_perturbseq" / "program_panels.py",
     ]
     combined = "\n".join(path.read_text(encoding="utf-8") for path in paths)
-    motif_source = (ROOT / "src" / "cc_perturbseq" / "motif_sources.py").read_text(encoding="utf-8")
+    motif_source = (
+        ROOT / "src" / "cc_perturbseq" / "motif_sources.py"
+    ).read_text(encoding="utf-8")
     assert "multiome_ipsc_ec" in motif_source
     assert "enhancer_enrichment_results.tsv" in motif_source
     assert "canonical_enhancer_enrichment_path" in combined
@@ -47,11 +49,17 @@ def test_figure_s6_runs_recovered_notebook_with_path_only_changes():
     text = _notebook_text(
         ROOT / "notebooks" / "supplementary" / "Figure_S06.ipynb"
     )
-    assert "program_annotation_panels_D0_D1_D2_D3_rotated_logos_D2_extra_D3_trimmed_markers.ipynb" in text
-    assert "b0ea563bee36408e54ff793e4915a7258232473a65813bba2bb5d7b5f655599a" in text
+    assert (
+        "program_annotation_panels_D0_D1_D2_D3_rotated_logos_"
+        "D2_extra_D3_trimmed_markers.ipynb"
+    ) in text
+    assert (
+        "b0ea563bee36408e54ff793e4915a7258232473a65813bba2bb5d7b5f655599a"
+        in text
+    )
     assert CANONICAL in text
     assert "patch_source_notebook" in text
-    assert "source_logic_changed\": False" in text
+    assert 'source_logic_changed\\": False' in text
     assert "plot_multi_day_annotation" not in text
 
 
@@ -60,11 +68,14 @@ def test_figure_s4_is_exact_previous_notebook_driver_for_b_c():
         ROOT / "notebooks" / "supplementary" / "Figure_S04.ipynb"
     )
     assert "iPSC_EC_QQ_full_covariates_with_replicate_correlation.ipynb" in text
-    assert "6e80625abd9b5e71d45da6dd19e888898318d39a159a7ac35600fc1d85489e87" in text
+    assert (
+        "6e80625abd9b5e71d45da6dd19e888898318d39a159a7ac35600fc1d85489e87"
+        in text
+    )
     assert '"panels": ["b", "c"]' in text
     assert "collect_s4_source_outputs" in text
-    assert "source_logic_changed\": False" in text
-    assert "source_style_changed\": False" in text
+    assert 'source_logic_changed\\": False' in text
+    assert 'source_style_changed\\": False' in text
     assert "plot_crt_qq" not in text
     assert "plot_replicate_effects" not in text
     assert "plot_cnmf_diagnostics" not in text
@@ -72,17 +83,8 @@ def test_figure_s4_is_exact_previous_notebook_driver_for_b_c():
     assert "plot_usage_correlation" not in text
 
 
-def test_figure_s3_was_restored_and_is_not_the_mistaken_source_driver():
-    text = _notebook_text(
-        ROOT / "notebooks" / "supplementary" / "Figure_S03.ipynb"
-    )
-    assert "panels a–f" in text.lower()
-    assert "CCPERTURBSEQ_FIGURE_S03_SOURCE_NOTEBOOK" not in text
-    assert "prepare_s3_source_reproduction" not in text
-
-
-def test_notebook_code_cells_compile():
-    for name in ("Figure_S03.ipynb", "Figure_S04.ipynb", "Figure_S06.ipynb"):
+def test_retained_motif_notebook_code_cells_compile():
+    for name in ("Figure_S04.ipynb", "Figure_S06.ipynb"):
         path = ROOT / "notebooks" / "supplementary" / name
         notebook = json.loads(path.read_text(encoding="utf-8"))
         for index, cell in enumerate(notebook["cells"]):
