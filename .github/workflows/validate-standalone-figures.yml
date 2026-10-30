@@ -1,0 +1,30 @@
+name: Validate standalone figure reproduction
+on:
+  push:
+    branches: [curation/figure-reproduction-v1]
+    paths: ['notebooks/**', 'src/**', 'tests/**', 'config/**', 'docs/STANDALONE*', '.github/workflows/validate-standalone-figures.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  standalone-numerics-and-rendering:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      NUMBA_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install tested scientific environment
+        run: python -m pip install -r config/geo-reproduction-requirements.txt logomaker==0.8.7
+      - name: Run complete repository suite including source-independent figure notebooks
+        run: PYTHONPATH=src python -m pytest -q tests
+      - name: Audit accepted main-figure entry points
+        run: python scripts/preflight_main_figure_notebooks.py
