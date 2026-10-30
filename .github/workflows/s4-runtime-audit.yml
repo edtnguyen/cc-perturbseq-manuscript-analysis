@@ -2,19 +2,71 @@ name: S4 runtime audit
 on:
   push:
     branches: [repair/s4-crt-runtime]
-    paths: [.github/workflows/s4-runtime-audit.yml]
+    paths: ['.github/workflows/s4-runtime-audit.yml', '.repair/**']
 permissions:
-  contents: read
+  contents: write
 jobs:
-  snapshot:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      NUMBA_NUM_THREADS: '2'
     steps:
       - uses: actions/checkout@v4
         with:
           lfs: false
-      - run: git archive --format=tar.gz --output=s4-current-code.tar.gz HEAD src notebooks config tests docs scripts .github data
-      - uses: actions/upload-artifact@v4
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
         with:
-          name: s4-current-code
-          path: s4-current-code.tar.gz
+          python-version: '3.11'
+      - name: Apply repair to published baseline
+        run: |
+          cp .repair/s4_runtime.py .repair/test_s4_crt_runtime.py .repair/apply_s4_runtime.py /tmp/
+          git checkout --detach d900dfb0aab1b27a2cabeb6dd9b1d235151a747e
+          python -m pip install nbformat
+          python /tmp/apply_s4_runtime.py
+      - name: Install test dependencies including actual Muon reader
+        run: |
+          python -m pip install -r config/geo-reproduction-requirements.txt logomaker==0.8.7
+          python -c 'import muon, anndata, mudata; print("Raw S4 dependencies available")'
+      - name: Exercise actual raw recomputation notebook branch
+        run: |
+          set -o pipefail
+          PYTHONPATH=src python -m pytest -q --basetemp=/tmp/s4-recompute tests/test_s4_crt_runtime.py 2>&1 | tee /tmp/s4-recompute.log
+      - name: Complete repository regression
+        run: |
+          set -o pipefail
+          PYTHONPATH=src python -m pytest -q tests 2>&1 | tee /tmp/s4-full-tests.log
+          python scripts/preflight_main_figure_notebooks.py
+      - name: Publish tested candidate
+        run: |
+          git config user.name 'Tri Nguyen'
+          git config user.email '72826864+edtnguyen@users.noreply.github.com'
+          git add src notebooks tests config docs
+          git commit -m 'Fix S4 CRT argument and verify explicit Python recomputation runtime' -m 'Use canonical guide-long-csv-template with compatibility alias, validate notebook arguments, distinguish sc-dl program CRT from upstream R-SCEPTRE, and execute both CRT stages in an explicit fresh Python process. Check inputs and dependencies first, propagate parameters and overwrite consistently, and add entire-notebook raw recomputation tests with deterministic numerical engine stubs. No old notebooks or statistical plotting functions are substituted.'
+          git push origin HEAD:refs/heads/repair/s4-crt-runtime-candidate
+          git rev-parse HEAD | tee /tmp/s4-candidate.txt
+      - name: Collect validation evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/s4-evidence
+          cp /tmp/s4-recompute.log /tmp/s4-full-tests.log /tmp/s4-candidate.txt /tmp/s4-evidence/ 2>/dev/null || true
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          root=Path('/tmp/s4-recompute')
+          for p in root.rglob('*'):
+              if p.is_file() and (p.name in {'execution.log','s4_crt.log','s4_crt_runtime.json','calls.jsonl'} or p.name.endswith('_summary.csv')):
+                  dest=Path('/tmp/s4-evidence')/p.relative_to(root)
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(p,dest)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s4-crt-runtime-validation
+          path: /tmp/s4-evidence
           retention-days: 3
