@@ -106,11 +106,12 @@ def test_figure_s6_runs_recovered_notebook_with_selected_paths():
     text = _notebook_text(
         ROOT / "notebooks" / "supplementary" / "Figure_S06.ipynb"
     )
-    compact = "".join(text.split())
-    assert (
-        "program_annotation_panels_D0_D1_D2_D3_rotated_logos_"
-        "D2_extra_D3_trimmed_markers.ipynb"
-    ) in compact
+    # The path is deliberately assembled from adjacent string literals in the
+    # source cell, so verify its frozen semantic components instead of a
+    # serialization-dependent contiguous source substring.
+    assert "program_annotation_panels_D0_D1_D2_D3_" in text
+    assert "rotated_logos_D2_extra_" in text
+    assert "D3_trimmed_markers.ipynb" in text
     assert (
         "b0ea563bee36408e54ff793e4915a7258232473a65813bba2bb5d7b5f655599a"
         in text
