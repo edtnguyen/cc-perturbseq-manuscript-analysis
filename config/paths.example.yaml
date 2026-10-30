@@ -53,10 +53,13 @@ multiome:
   tss_profiles: REPLACE_WITH_TSS_PROFILE_TABLE
   chrombpnet_performance: REPLACE_WITH_CHROMBPNET_PERFORMANCE_TABLE
   motif_qc: REPLACE_WITH_MOTIF_QC_TABLE
-  # Canonical day-specific scE2G motif-enrichment table selected for every figure.
-  enhancer_enrichment_results: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/2.tf_enrichment_in_programs/enhancer_enrichment_results.tsv
-  modisco_compiled_h5: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/results/compendium/modisco_compiled/modisco_compiled.h5
+  # Active min-10-carrier enrichment table used by Figure 3d, Figure 4e and S6.
+  enhancer_enrichment_results: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/2.tf_enrichment_in_programs/enhancer_enrichment_results_min10.tsv
+  # Active non-archive motif-name map.
   cluster_motif_map: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/analysis/0.0.motif_id_annotation/tables/cluster_to_tf_motif_id_mapping.tsv
+  # Standard compiled compendium referenced by the recovered panel notebooks.
+  # Do not substitute results/compendium/modisco_compiled_profile/modisco_compiled.h5.
+  modisco_compiled_h5: /oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/results/compendium/modisco_compiled/modisco_compiled.h5
   motif_fdr_template: /oak/stanford/groups/engreitz/Users/ogrokhov/experiments/ec_sce2g/tfmn/results_0604/gene_TF_df_top300_genes_fdr_d{day}.txt
   motif_score_template:
   motif_name_map: /oak/stanford/groups/engreitz/Users/mattei/Git/motif-clustering/resources/65NR_motif_names.txt
