@@ -59,6 +59,15 @@ def test_patch_source_notebook_changes_only_named_path_assignments(tmp_path):
     assert provenance["replacement_counts"] == {
         "ENHANCER_ENRICHMENT_PATH": 1
     }
+    assert notebook.metadata["cc_perturbseq"]["source_sha256"] == original_sha
+    assert notebook.metadata["cc_perturbseq"]["path_only_replacements"] == {
+        "ENHANCER_ENRICHMENT_PATH": "/new/enhancer_enrichment_results.tsv"
+    }
+    reloaded = nbformat.read(output, as_version=4)
+    nbformat.validate(reloaded)
+    assert reloaded.metadata["cc_perturbseq"]["source_notebook"] == str(
+        source.resolve()
+    )
 
 
 def test_git_blob_sha1_matches_git_object_formula(tmp_path):

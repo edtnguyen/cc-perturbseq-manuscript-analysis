@@ -1,6 +1,7 @@
 """Plot producers for Figure S2 mixed hiPSC–K562 panels."""
 from __future__ import annotations
 
+import inspect
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -23,13 +24,58 @@ from .figure_s02_parse_mix_data import (
 
 
 def _violin_kwargs() -> dict[str, Any]:
-    return {
+    """Return width/bandwidth arguments supported by the installed seaborn.
+
+    The source notebook used ``scale='width'`` and ``bw_adjust=1``. Seaborn
+    renamed ``scale`` to ``density_norm`` in 0.13, so inspect the installed
+    function instead of assuming one API and failing at runtime.
+    """
+    parameters = inspect.signature(sns.violinplot).parameters
+    kwargs: dict[str, Any] = {
         "cut": 0,
         "inner": "box",
-        "density_norm": "width",
-        "bw_adjust": 1.0,
         "linewidth": 0.8,
     }
+    if "density_norm" in parameters:
+        kwargs["density_norm"] = "width"
+    elif "scale" in parameters:
+        kwargs["scale"] = "width"
+    if "bw_adjust" in parameters:
+        kwargs["bw_adjust"] = 1.0
+    return kwargs
+
+
+def _draw_violin(
+    *,
+    data: pd.DataFrame,
+    category_axis: str,
+    value_axis: str,
+    order,
+    palette,
+    ax,
+):
+    """Draw a categorical violin across seaborn 0.12 and 0.13 APIs."""
+    parameters = inspect.signature(sns.violinplot).parameters
+    kwargs: dict[str, Any] = {
+        "data": data,
+        category_axis: "sample",
+        value_axis: value_axis,
+        "order": list(order),
+        "palette": list(palette),
+        "ax": ax,
+        **_violin_kwargs(),
+    }
+    # Seaborn 0.13 deprecates palette-without-hue. Older releases do not
+    # support the legend argument, so use redundant hue only when supported.
+    if "legend" in parameters:
+        kwargs.update(
+            {
+                "hue": "sample",
+                "hue_order": list(order),
+                "legend": False,
+            }
+        )
+    return sns.violinplot(**kwargs)
 
 
 def _format_median(value: float, *, decimals: int = 0) -> str:
@@ -84,17 +130,17 @@ def _cell_type_violin(
     fig, axes = plt.subplots(1, 2, figsize=(7.4, 3.4), sharey=True)
     for ax, cell_type in zip(axes, CELL_TYPE_ORDER):
         subset = data.loc[data["cell_type"].eq(cell_type)].dropna(subset=[value])
-        sns.violinplot(
+        if subset.empty:
+            raise ValueError(
+                f"No {cell_type} cells are available for violin metric {value!r}."
+            )
+        _draw_violin(
             data=subset,
-            x="sample",
-            y=plot_value,
-            order=list(primers),
-            palette=[PRIMER_COLORS[p] for p in primers],
-            hue="sample",
-            hue_order=list(primers),
-            legend=False,
+            category_axis="x",
+            value_axis=plot_value,
+            order=primers,
+            palette=[PRIMER_COLORS[primer] for primer in primers],
             ax=ax,
-            **_violin_kwargs(),
         )
         if log_plus_one:
             ax.set_yscale("log")
@@ -162,6 +208,8 @@ def plot_panel_m(cell_metrics: pd.DataFrame, saturation: pd.DataFrame):
         MANUSCRIPT_TRANSCRIPT_ORDER,
         ordered=True,
     )
+    if transcript.empty:
+        raise ValueError("No transcript-count cells are available for panel S2m.")
     fig, axes = plt.subplots(
         1,
         2,
@@ -169,17 +217,13 @@ def plot_panel_m(cell_metrics: pd.DataFrame, saturation: pd.DataFrame):
         gridspec_kw={"width_ratios": [1.0, 1.15]},
     )
     counts = transcript.groupby("sample", observed=False).size()
-    sns.violinplot(
+    _draw_violin(
         data=transcript,
-        y="sample",
-        x="total_counts",
-        order=list(MANUSCRIPT_TRANSCRIPT_ORDER),
-        hue="sample",
-        hue_order=list(MANUSCRIPT_TRANSCRIPT_ORDER),
+        category_axis="y",
+        value_axis="total_counts",
+        order=MANUSCRIPT_TRANSCRIPT_ORDER,
         palette=[PRIMER_COLORS[p] for p in MANUSCRIPT_TRANSCRIPT_ORDER],
-        legend=False,
         ax=axes[0],
-        **_violin_kwargs(),
     )
     axes[0].set_yticks(
         np.arange(len(MANUSCRIPT_TRANSCRIPT_ORDER)),
@@ -197,6 +241,8 @@ def plot_panel_m(cell_metrics: pd.DataFrame, saturation: pd.DataFrame):
         frame = saturation.loc[
             saturation["primer"].astype(str).eq(primer)
         ].sort_values("mean_assigned_reads_per_cell")
+        if frame.empty:
+            raise ValueError(f"No saturation rows were found for primer {primer!r}.")
         x = frame["mean_assigned_reads_per_cell"].to_numpy(float)
         y = frame["median_transcript_umis_per_cell"].to_numpy(float)
         x_unique, first = np.unique(x, return_index=True)

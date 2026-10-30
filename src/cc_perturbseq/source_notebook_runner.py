@@ -34,7 +34,9 @@ def _load_notebook(path: str | Path):
     path = Path(path).expanduser().resolve()
     if not path.is_file() or path.stat().st_size == 0:
         raise FileNotFoundError(f"Source notebook is missing or empty: {path}")
-    return nbformat.read(path, as_version=4)
+    notebook = nbformat.read(path, as_version=4)
+    nbformat.validate(notebook)
+    return notebook
 
 
 _LITERAL = r"(?:(?:[rRuUbBfF]{0,2})\"(?:\\.|[^\"\\])*\"|(?:[rRuUbBfF]{0,2})'(?:\\.|[^'\\])*')"
@@ -84,7 +86,7 @@ def patch_source_notebook(
         name: replace_path_assignment(notebook, name, path)
         for name, path in path_replacements.items()
     }
-    notebook.metada.setdefault("cc_perturbseq", {}).update(
+    notebook.metadata.setdefault("cc_perturbseq", {}).update(
         {
             "source_notebook": str(source_path),
             "source_sha256": observed,
@@ -94,6 +96,7 @@ def patch_source_notebook(
             },
         }
     )
+    nbformat.validate(notebook)
     output_path = Path(output_path).expanduser().resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     nbformat.write(notebook, output_path)
@@ -105,7 +108,13 @@ def patch_source_notebook(
     }
 
 
-def execute_notebook(notebook_or_path, output_path, *, working_directory, timeout=14_400):
+def execute_notebook(
+    notebook_or_path,
+    output_path,
+    *,
+    working_directory,
+    timeout=14_400,
+):
     import nbformat
     from nbclient import NotebookClient
 
@@ -114,17 +123,24 @@ def execute_notebook(notebook_or_path, output_path, *, working_directory, timeou
         if isinstance(notebook_or_path, (str, Path))
         else notebook_or_path
     )
+    nbformat.validate(notebook)
+    working_directory = Path(working_directory).expanduser().resolve()
+    if not working_directory.is_dir():
+        raise NotADirectoryError(
+            f"Notebook working directory is missing or not a directory: {working_directory}"
+        )
     output_path = Path(output_path).expanduser().resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     client = NotebookClient(
         notebook,
         timeout=timeout,
         kernel_name=notebook.metadata.get("kernelspec", {}).get("name", "python3"),
-        resources={"metadata": {"path": str(Path(working_directory).resolve())}},
+        resources={"metadata": {"path": str(working_directory)}},
         allow_errors=False,
         record_timing=True,
     )
     executed = client.execute()
+    nbformat.validate(executed)
     nbformat.write(executed, output_path)
     return executed
 
@@ -135,7 +151,8 @@ def _notebook_text(path: Path) -> str:
     except Exception:
         return ""
     return "\n".join(
-        cell.source for cell in notebook.cells
+        cell.source
+        for cell in notebook.cells
         if cell.cell_type in {"code", "markdown"}
     ).lower()
 
@@ -145,20 +162,49 @@ def _contains_group(text: str, alternatives: Sequence[str]) -> bool:
 
 
 def discover_notebook(
-    *, explicit_path, search_roots, required_token_groups,
-    preferred_tokens=(), excluded_tokens=(), max_notebooks=20_000,
+    *,
+    explicit_path,
+    search_roots,
+    required_token_groups,
+    preferred_tokens=(),
+    excluded_tokens=(),
+    max_notebooks=20_000,
 ):
     if explicit_path:
         path = Path(explicit_path).expanduser().resolve()
         text = _notebook_text(path)
-        missing = [tuple(g) for g in required_token_groups if not _contains_group(text, g)]
+        missing = [
+            tuple(group)
+            for group in required_token_groups
+            if not _contains_group(text, group)
+        ]
         if missing:
             raise ValueError(
                 f"Explicit source notebook lacks token groups: {missing}"
             )
-        return path, [{"path": str(path), "score": sum(t.lower() in text for t in preferred_tokens), "explicit": True}]
+        return path, [
+            {
+                "path": str(path),
+                "score": sum(
+                    token.lower() in text for token in preferred_tokens
+                ),
+                "explicit": True,
+            }
+        ]
 
-    skip = {".git", ".ipynb_checkpoints", "__pycache__", "archive", "archives", "cache", "env", "envs", "outputs", "results", "tmp"}
+    skip = {
+        ".git",
+        ".ipynb_checkpoints",
+        "__pycache__",
+        "archive",
+        "archives",
+        "cache",
+        "env",
+        "envs",
+        "outputs",
+        "results",
+        "tmp",
+    }
     rows = []
     inspected = 0
     for raw_root in search_roots:
@@ -166,34 +212,66 @@ def discover_notebook(
         if not root.is_dir():
             continue
         for directory, dirs, files in os.walk(root):
-            dirs[:] = [d for d in dirs if d.lower() not in skip and not d.startswith(".")]
+            dirs[:] = [
+                directory_name
+                for directory_name in dirs
+                if directory_name.lower() not in skip
+                and not directory_name.startswith(".")
+            ]
             for filename in files:
                 if not filename.endswith(".ipynb") or filename.startswith("."):
                     continue
                 inspected += 1
                 if inspected > max_notebooks:
-                    raise RuntimeError("Notebook search limit reached; set the source environment variable.")
+                    raise RuntimeError(
+                        "Notebook search limit reached; set the source "
+                        "environment variable."
+                    )
                 path = Path(directory) / filename
                 text = _notebook_text(path)
-                if not text or any(t.lower() in text for t in excluded_tokens):
+                if not text or any(
+                    token.lower() in text for token in excluded_tokens
+                ):
                     continue
-                if not all(_contains_group(text, group) for group in required_token_groups):
+                if not all(
+                    _contains_group(text, group)
+                    for group in required_token_groups
+                ):
                     continue
-                matched = [t for t in preferred_tokens if t.lower() in text]
-                rows.append({"path": str(path.resolve()), "score": len(matched), "matched_preferred_tokens": matched, "explicit": False})
+                matched = [
+                    token
+                    for token in preferred_tokens
+                    if token.lower() in text
+                ]
+                rows.append(
+                    {
+                        "path": str(path.resolve()),
+                        "score": len(matched),
+                        "matched_preferred_tokens": matched,
+                        "explicit": False,
+                    }
+                )
     if not rows:
-        raise FileNotFoundError("No existing source notebook matched; set the explicit source-notebook environment variable.")
+        raise FileNotFoundError(
+            "No existing source notebook matched; set the explicit "
+            "source-notebook environment variable."
+        )
     rows.sort(key=lambda row: (-row["score"], row["path"]))
     best = [row for row in rows if row["score"] == rows[0]["score"]]
     if len(best) != 1:
         raise RuntimeError(
-            "Source-notebook discovery is ambiguous; set the explicit source-notebook environment variable: "
+            "Source-notebook discovery is ambiguous; set the explicit "
+            "source-notebook environment variable: "
             + json.dumps(best, indent=2)
         )
     return Path(best[0]["path"]), rows
 
 
 __all__ = [
-    "discover_notebook", "execute_notebook", "git_blob_sha1_file",
-    "patch_source_notebook", "replace_path_assignment", "sha256_file",
+    "discover_notebook",
+    "execute_notebook",
+    "git_blob_sha1_file",
+    "patch_source_notebook",
+    "replace_path_assignment",
+    "sha256_file",
 ]
