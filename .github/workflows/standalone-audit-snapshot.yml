@@ -24,15 +24,14 @@ jobs:
           python-version: '3.11'
       - name: Decode verified development migration
         run: |
-          cp .repair/post_migration.py /tmp/post_migration.py
+          cp .repair/post_migration.py .repair/export_compatibility.py .repair/fixture_revision.py /tmp/
           python - <<'PY'
           from pathlib import Path
           import base64, hashlib, json, lzma
           encoded=''.join(Path(f'.repair/payload.{i}.b64').read_text().strip() for i in range(4))
           raw=lzma.decompress(base64.b64decode(encoded))
           assert hashlib.sha256(raw).hexdigest() == '0f4c7228771e01ad19ddb1c56a46e35f71d779fb946191bfbcb1333db654455f'
-          payload=json.loads(raw)
-          for name,text in payload.items():
+          for name,text in json.loads(raw).items():
               Path('/tmp',name).write_text(text)
           PY
       - name: Apply migration to published baseline without temporary staging files
@@ -42,6 +41,8 @@ jobs:
           python /tmp/migration.py
           cp /tmp/test_standalone_figure_ports.py tests/test_standalone_figure_ports.py
           python /tmp/post_migration.py
+          python /tmp/export_compatibility.py
+          python /tmp/fixture_revision.py
       - name: Install tested scientific environment
         run: python -m pip install -r config/geo-reproduction-requirements.txt logomaker
       - name: Execute all repository tests including complete standalone figure notebooks
@@ -54,7 +55,7 @@ jobs:
           git config user.name 'Tri Nguyen'
           git config user.email '72826864+edtnguyen@users.noreply.github.com'
           git add -A
-          git commit -m 'Re-script all supplementary figure workflows and remove archived-notebook execution' -m 'Port original S2 plotnine paper-panel code, S4 numerical CRT/replicate analysis, and S6 program annotation selection/rendering into regular repository modules and executable notebook cells. Audit all seven figure notebooks, keep accepted main figures unchanged, remove source runners and figure copying, preserve canonical motif data paths, and execute fresh-process fixtures with no recovery archive or private paths. Keep public GEO exports compatible and document validation limits.'
+          git commit -m 'Re-script all supplementary figure workflows and remove archived-notebook execution' -m 'Port original S2 plotnine paper-panel code, S4 numerical CRT/replicate analysis, and S6 program annotation selection/rendering into regular repository modules and executable notebook cells. Audit all seven figure notebooks, keep accepted main figures unchanged, remove source runners and figure copying, preserve canonical motif data paths, and execute fresh-process fixtures with no recovery archive or private paths. Preserve motif-logo physical placement across export DPI changes. Keep public GEO exports compatible and document validation limits.'
           git push origin HEAD:refs/heads/repair/standalone-figure-candidate
           git rev-parse HEAD
       - name: Collect preview and execution logs
@@ -65,13 +66,11 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import shutil
-          root=Path('/tmp/standalone-fixtures')
-          dest=Path('/tmp/standalone-evidence')
+          root=Path('/tmp/standalone-fixtures'); dest=Path('/tmp/standalone-evidence')
           if root.exists():
               for path in root.rglob('*'):
                   if path.is_file() and (path.suffix in {'.png','.log'} or path.name.endswith('_summary.csv')):
-                      target=dest/path.relative_to(root)
-                      target.parent.mkdir(parents=True,exist_ok=True)
+                      target=dest/path.relative_to(root); target.parent.mkdir(parents=True,exist_ok=True)
                       shutil.copy2(path,target)
           PY
       - uses: actions/upload-artifact@v4
