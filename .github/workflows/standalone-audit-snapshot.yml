@@ -1,0 +1,20 @@
+name: Standalone figure audit snapshot
+on:
+  push:
+    branches: [repair/standalone-figure-audit]
+    paths: [.github/workflows/standalone-audit-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - run: git archive --format=tar.gz --output=source-snapshot.tar.gz HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-source-snapshot
+          path: source-snapshot.tar.gz
+          retention-days: 1
