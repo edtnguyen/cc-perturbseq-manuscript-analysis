@@ -38,6 +38,18 @@ def test_rebuild_notebook_uses_regenerated_sublibraries():
     assert "20260325_Hippo_timecourse/Hippo_timecourse_combined.h5ad" not in source
 
 
+def test_pre_qc_difference_cannot_bypass_strict_post_qc_validation():
+    _, source = _sources()
+
+    # The reconstructed intermediate can differ by low-quality pre-QC barcodes,
+    # but the exact historical final cohort remains mandatory.
+    assert "pre_qc_shape_is_diagnostic" in source
+    assert "strict_historical=False" in source
+    assert "QUERY_H5AD, strict_historical=STRICT_HISTORICAL" in source
+    assert "combined_receipt_path(QUERY_H5AD).unlink" in source
+    assert "exact post-QC shape and all 54 per-sample counts" in source
+
+
 def test_rebuild_notebook_replaces_stale_artifacts_and_runs_figures():
     _, source = _sources()
 
