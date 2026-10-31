@@ -1,0 +1,77 @@
+name: Apply S4 post-CRT filters
+
+on:
+  push:
+    branches:
+      - curation/figure-reproduction-v1
+    paths:
+      - .github/workflows/apply-s4-postcrt.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      NUMBA_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Decode audited correction installer
+        run: |
+          base64 --decode .github/s4patch_payload.b64 \
+            | gzip --decompress > /tmp/apply_s4_postcrt_filters.py
+          python -m py_compile /tmp/apply_s4_postcrt_filters.py
+
+      - name: Install focused validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install nbformat pytest numpy pandas scipy matplotlib plotnine
+
+      - name: Apply correction
+        run: |
+          python /tmp/apply_s4_postcrt_filters.py --repo . --apply
+
+      - name: Validate notebook and source-derived filters
+        run: |
+          python -m json.tool notebooks/supplementary/Figure_S04.ipynb >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("notebooks/supplementary/Figure_S04.ipynb")
+          nb = json.loads(path.read_text(encoding="utf-8"))
+          for i, cell in enumerate(nb["cells"]):
+              if cell.get("cell_type") == "code":
+                  source = cell.get("source", "")
+                  if isinstance(source, list):
+                      source = "".join(source)
+                  compile(source, f"{path}:cell-{i}", "exec")
+          print("Figure S4 notebook JSON and code cells: PASS")
+          PY
+          PYTHONPATH=src python -m pytest -q tests/test_s4_postcrt.py
+
+      - name: Commit and push validated correction
+        run: |
+          git config user.name "Tri Nguyen"
+          git config user.email "72826864+edtnguyen@users.noreply.github.com"
+          git add \
+            notebooks/supplementary/Figure_S04.ipynb \
+            src/cc_perturbseq/figure_s04_postcrt.py \
+            tests/test_s4_postcrt.py \
+            docs/S4_POSTCRT_SOURCE_FUNCTION_HASHES.json
+          git commit \
+            -m "Apply final S4c post-CRT filtering" \
+            -m "Port executed source cells 29-31: require at least 20 target-carrier cells with original cNMF usage in both replicates, apply day-wise pooled full-day BH q <= 0.10, preserve skew-first p-value selection with audited empirical fallback, and prevent silent top-N or unfiltered fallback. Add filter audits, provenance, source-function hashes, and focused regression tests."
+          git push origin HEAD:curation/figure-reproduction-v1
