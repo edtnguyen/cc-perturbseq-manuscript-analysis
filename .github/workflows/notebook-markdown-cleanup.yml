@@ -57,7 +57,7 @@ jobs:
           git config user.email '72826864+edtnguyen@users.noreply.github.com'
           git add notebooks/main notebooks/supplementary
           git commit -m 'Present figure notebooks as manuscript reproduction workflows' -m 'Rewrite markdown in Figures 1-4, S2, S4, and S6 to describe scientific inputs, calculations, filters, and outputs without internal reconstruction history. Code cells, execution counts, and embedded outputs are unchanged.'
-          git push --force origin HEAD:cleanup/figure-notebook-markdown-candidate
+          git push --force origin HEAD:refs/heads/cleanup/figure-notebook-markdown-candidate
       - uses: actions/upload-artifact@v4
         with:
           name: figure-notebook-markdown-cleanup-report
