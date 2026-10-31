@@ -1,0 +1,354 @@
+name: Clean published figure notebook markdown
+
+on:
+  push:
+    branches: [cleanup/figure-notebook-markdown]
+    paths: [.github/workflows/notebook-markdown-cleanup.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Rewrite markdown cells only
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import re
+          from pathlib import Path
+
+          replacements = {
+              'notebooks/main/Figure_01.ipynb': {
+                  0: '''# Figure 1, panels b–d — regulators and gene programs during arterial endothelial differentiation
+
+This notebook reproduces computational panels **b–d**. Panel a is an experimental schematic and is not generated here.
+
+- **Panel b:** genome-wide CRISPRi screen volcano plot using U-test log2 fold changes and directional MAGeCK FDR values.
+- **Panel c:** guide-level Day 3 endothelial differentiation estimates from the validation screen, with two-sided Welch tests and BH correction across target genes.
+- **Panel d:** integrated UMAP colored by the dominant selected cNMF program.
+
+Input locations are specified in `config/paths.example.yaml` and may be overridden in `config/paths.local.yaml`.
+''',
+                  3: '''## Panel b — genome-wide CRISPRi screen
+
+The x axis is the U-test log2 fold change. The y axis uses the directional MAGeCK FDR: `neg|fdr` for negative effects and `pos|fdr` for positive effects. A gene is classified as a MAGeCK hit when either directional FDR is below 0.05. The panel is rendered with plotnine and exported as vector and raster graphics.
+''',
+                  5: '''## Panel c — validation-screen guide-level Day 3 EC fractions
+
+Guide counts from two CDH5-positive and two CDH5-negative samples are used to estimate endothelial differentiation for each guide. For each biological replicate, a 0.5-count pseudocount is added and the positive/negative count ratio is converted to log2 odds. The replicate-specific odds are centered so that the arithmetic mean EC percentage across the 120 control guides is 70%. The two replicate-specific percentages are then averaged for each guide. Each target gene is compared with the 120 controls using a **two-sided Welch t-test**, followed by BH correction across all 297 target genes.
+
+The guide-level distributions, deterministic point positions, significance labels, and pathway groupings are rendered with plotnine.
+''',
+                  7: '''## Panel d — integrated UMAP colored by dominant selected cNMF program
+
+The integrated AnnData UMAP is aligned to the cNMF object after exact cell-ID verification. Each cell is assigned to the highest-scoring program listed in `program_order.txt`; cells with a maximum selected-program score of 0.02 or less are shown in gray.
+''',
+              },
+              'notebooks/main/Figure_02.ipynb': {
+                  0: '''# Figure 2 — Distinct perturbation programs converge on failed endothelial differentiation
+
+This notebook reproduces panels **a, b, d, e, and f**. Schematic panel c is not generated here.
+
+- **Panel a:** pairwise correlations among perturbation-effect profiles across 50 programs and four differentiation days.
+- **Panel b:** selected regulator-by-program effects together with Day 3 endothelial output.
+- **Panel d:** guide-level Day 3 endothelial differentiation for ETV2, KDR, PLCG1, and PRKCD.
+- **Panel e:** cNMF-program and marker-gene UMAPs.
+- **Panel f:** carrier-seeded neighborhood enrichment in cNMF space.
+
+All computational panels in this notebook are rendered with **plotnine**.
+''',
+                  3: '''## Panel a — perturbation-effect correlations
+
+Pearson correlations use 200 features per profile (50 programs × D0–D3), average linkage on \(1-r\), and optimal leaf ordering. `NEDD8-MDP1` is removed while canonical `NEDD8` and the pooled non-targeting profile are retained.
+''',
+                  5: '''## Panel b — program effects and Day 3 EC output
+
+The EC-output column uses all 120 controls. Target-guide percentages exclude cells carrying any control guide; each control-guide percentage excludes cells carrying the evaluated target. Two-sided Welch P values are BH-adjusted across all 297 targets.
+''',
+                  7: '''## Panel d — guide-level Day 3 EC differentiation
+
+The control box combines all **120 negative-control guides**: 60 non-targeting and 60 safe-targeting guides. For each individual control guide, cells also carrying any guide targeting KDR, PLCG1, PRKCD, or ETV2 are excluded. Each of the four targeting-guide distributions is compared with the resulting 120-guide control distribution using a two-sided Welch t-test; P values are BH-adjusted across the four displayed genes.
+''',
+                  9: '''## Panel e — P17/P27 and marker UMAPs
+
+P17, SLC8A1, P27, and GATA4 are displayed on the integrated UMAP using a `YlGnBu` color scale, a light-gray background, and feature-specific 99th-percentile maxima.
+''',
+                  11: '''## Panel f — carrier-seeded neighborhood enrichment
+
+All target carriers are used as seeds, and all 120 pooled non-targeting and safe-targeting guides define the control population. Enrichment is calculated within same-day 300-neighbor Euclidean neighborhoods in z-scored 50-program cNMF space using a 0.5 pseudocount, and displayed as faceted UMAPs on a red–white–blue scale.
+''',
+              },
+              'notebooks/main/Figure_03.ipynb': {
+                  0: '''# Figure 3 — Hippo signaling is required for efficient endothelial differentiation
+
+This notebook reproduces computational panels **b, c, d, and f**. Panel a is a pathway schematic and panel e is an experimental flow-cytometry panel; neither is generated here.
+
+- **Panel b:** P2/P34, CDH5/ACTC1, and Hippo carrier-seeded neighborhood UMAPs.
+- **Panel c:** guide-level Day 3 endothelial differentiation for NF2, LATS2, AMOTL2, and TAOK1.
+- **Panel d:** integrated P2/P34 regulator effects, gene loadings, motif enrichment, and motif logos.
+- **Panel f:** Hippo small-molecule time-course dotplots.
+
+Panels b and c use **plotnine**; panel d uses Matplotlib and logomaker to align heatmaps and motif logos; panel f uses Scanpy dotplots.
+
+## Input requirements
+
+The processed Hippo expression object and fixed-reference cNMF projection are specified in the active path configuration. Before plotting, the analysis verifies complete cell coverage, program labels, and the condition-specific quality-control fields required by the time-course panels.
+''',
+                  3: '''## Panel b — P2/P34, marker genes, and carrier-seeded neighborhoods
+
+Feature maps show P2, P34, CDH5, and ACTC1 on the integrated UMAP. For the Hippo perturbations, all target carriers are used as seeds, all 120 pooled negative-control guides define target-specific controls, neighbors are restricted to the same differentiation day, and enrichment is calculated in 300-neighbor Euclidean neighborhoods in z-scored 50-program space.
+''',
+                  5: '''## Panel c — guide-level Day 3 EC fractions
+
+For each of the 120 individual control guides, D3 cells carrying any guide targeting NF2, LATS2, AMOTL2, or TAOK1 are excluded before its EC percentage is calculated. Targeting-guide percentages retain all D3 carriers of the corresponding guide. Each target-guide distribution is compared with the common 120-guide control distribution using a two-sided Welch t-test; the four P values are BH-adjusted.
+''',
+                  7: '''## Panel d — integrated annotation of P2 and P34
+
+The panel combines the cNMF regulator-effect workbook, final consensus spectra, the minimum-10-carrier motif-enrichment table, the motif-cluster map, and compiled MoDISco contribution-weight matrices.
+
+For each program it displays:
+
+1. the first three genes from `Top 5 specific regulators (FDR<0.1) D3`;
+2. the manuscript marker-gene list;
+3. the top five motifs ranked by q value, regardless of significance.
+
+The complete motif union is exported together with the panel source tables for downstream figure layout.
+''',
+                  9: '''## Panel f — Hippo-modulator marker and projected-program dotplots
+
+The five Day 3 conditions, condition ordering, marker genes, per-gene `standard_scale='var'`, and cNMF CLR dotplot settings are applied to the processed expression object and the fixed-reference `top_specific_200` cNMF projection.
+''',
+              },
+              'notebooks/main/Figure_04.ipynb': {
+                  0: '''# Figure 4 — Hippo signaling promotes ETV2 and suppresses alternative lateral-mesoderm fates
+
+This notebook reproduces computational panels **c, d, and e**. Panels a and b are experimental qPCR and flow-cytometry panels and are not generated here.
+
+- **Panel c:** D1-to-D2 marker-gene and projected-program dotplots across Hippo-modulator conditions.
+- **Panel d:** P15/P17 and representative marker UMAPs.
+- **Panel e:** integrated P15/P17 regulator effects, gene loadings, motif enrichment, and motif logos.
+
+Panel c uses Scanpy dotplots, panel d uses plotnine, and panel e uses Matplotlib and logomaker.
+
+## Input requirements
+
+The processed Hippo expression object and fixed-reference cNMF projection are specified in the active path configuration. Before plotting, the analysis verifies complete cell coverage, program labels, and the condition-specific quality-control fields required by the time-course panels.
+''',
+                  3: '''## Panel c — D1-to-D2 marker-gene and program dotplots
+
+The analysis retains condition-specific QC-passing cells, excludes sublibrary `s8`, normalizes and log-transforms marker-gene expression, and displays P15 and P17 from `obsm["X_cnmf_clr_top_specific_200"]` using the specified D1-to-D2 condition order.
+''',
+                  5: '''## Panel d — P15/P17 and representative marker UMAPs
+
+P15, FLI1, P17, and SLC8A1 are displayed on the integrated UMAP using a light-gray background, a `YlGnBu` foreground scale, feature-specific 99th-percentile maxima, rasterized cell points, and vector text.
+''',
+                  7: '''## Panel e — integrated P15/P17 annotation
+
+The annotation combines the cNMF regulator-effect workbook, final `030526` consensus spectra, the minimum-10-carrier day-specific motif-enrichment table, the motif-cluster map, and compiled MoDISco contribution-weight matrices. It displays the top three D2-specific regulators per program, the manuscript marker genes, and the top five motifs per program. The complete motif union is exported together with the panel source tables for downstream figure layout.
+''',
+              },
+              'notebooks/supplementary/Figure_S02.ipynb': {
+                  0: '''# Figure S2 — mixed hiPSC–K562 Parse v3 compatibility panels
+
+This notebook reproduces **Figure S2 panels i, j, l, m, and n** from the mixed hiPSC–K562 Parse Evercode v3 experiment. Other Figure S2 panels are based on separate benchmarking experiments and are not included here.
+
+The analysis reads the Split-pipe expression matrix, long guide-UMI table, filtered guide reference, and transcript-saturation reports for the CS1, DC1, Dual, and no-guide-primer conditions.
+''',
+                  3: '''## Mixed-cell benchmark metrics
+
+Cells are filtered using the specified QC thresholds, normalized, and analyzed using highly variable genes, PCA, a neighbor graph, UMAP, and Leiden clustering. Whole Leiden clusters are assigned to K562 or hiPSC using marker-score comparisons. The long guide-UMI table is processed in chunks without constructing a dense cell-by-guide matrix.
+
+Manuscript panel medians are reported as diagnostics; small numerical differences do not stop execution.
+''',
+                  5: '''## Panel i — matched-pool guide recovery
+
+For transcriptome-assigned K562 and hiPSC cells, guide UMIs are summed from the guide pool matching the assigned lineage. CS1, DC1, and Dual primer conditions are shown separately.
+''',
+                  7: '''## Panel j — guide-pool specificity
+
+Specificity is the matched-pool guide-UMI sum divided by the combined hiPSC- and K562-pool guide-UMI sum for each transcriptome-assigned cell.
+''',
+                  9: '''## Panel l — top-guide capture
+
+The most abundant guide UMI count per cell is shown for CS1, DC1, Dual, and the no-guide-primer background condition, separately for transcriptome-assigned K562 and hiPSC cells.
+''',
+                  11: '''## Panel m — transcriptome recovery and saturation
+
+The left subplot shows total transcriptome UMIs per QC-passing cell. The right subplot uses the four Split-pipe `tscp_counts_subsampled.csv` reports to plot median transcriptome UMIs per cell against mean assigned reads per cell.
+''',
+                  13: '''## Panel n — guide-pool mixing
+
+Individual cell-guide observations below 3 UMIs are set to zero before summing the hiPSC- and K562-pool guide counts per cell. The two-dimensional histogram and marginal histograms show the resulting distribution of guide-pool UMIs across cells.
+''',
+                  16: '''## Outputs
+
+Vector and raster figures, source tables, and run receipts are written under `outputs.root/Figure_S02/panel_<letter>/`. The output root is defined by the repository path configuration.
+''',
+              },
+              'notebooks/supplementary/Figure_S04.ipynb': {
+                  0: '''# Figure S4b–c — program CRT calibration and biological-replicate effect concordance
+
+This notebook generates:
+
+- **Panel S4b:** empirical CRT Q–Q plots for real target–program tests and matched non-targeting pseudo-target tests at D0–D3.
+- **Panel S4c:** biological-replicate comparisons of matched target–program beta estimates after the specified support and pooled-significance filters.
+
+By default, the notebook reads existing numerical CRT and replicate-beta results and regenerates the plots. Set `RECOMPUTE_CRT=True` to recompute the numerical results from the configured inputs using `B=10000` for the full-day CRT and `B_REP=127` for replicate beta estimation.
+''',
+                  2: '''## Numerical inputs and runtime
+
+The analysis uses saved guide-assignment tables produced upstream and runs the program-level CRT in Python. It does not rerun guide assignment.
+
+When `RECOMPUTE_CRT=True`, the notebook validates the command-line arguments, selected Python interpreter, programDE import location, and all requested day-specific inputs before starting computation. Full-day CRT and replicate beta estimation run in the same selected interpreter. Set `CRT_PYTHON` to an explicit interpreter when the notebook kernel and CRT environment differ.
+
+Runtime logs and input/version records are written to `recomputed_crt/s4_crt.log` and `recomputed_crt/s4_crt_runtime.json`. Any worker failure stops subsequent plotting.
+''',
+                  3: '''### Replicate-output settings and resuming
+
+Replicate beta extraction uses `calibrate_skew_normal=False`, `return_raw_pvals=False`, and `return_skew_normal=False`; `betas_df` is returned directly by programDE. The optional no-skew full-day path reads empirical results from `pvals_df`.
+
+After a full-day export has completed, set `RECOMPUTE_CRT=True` and `CRT_STAGE="replicates"` to run only replicate estimation. The output directory, scientific settings, inputs, and guide mapping must match the completed full-day run. Use `CRT_STAGE="all"` for a new or changed analysis.
+
+`GUIDE_MAPPING_POLICY="source_names"` preserves the target and control labels used by the analysis while auditing labels from the v43 guide-metadata table. `GUIDE_MAPPING_POLICY="metadata"` is an explicit alternative that uses the metadata target labels and requires both stages to be regenerated when mappings change.
+''',
+                  5: '''## S4b — empirical Q–Q plots
+
+For each differentiation day, observed empirical CRT p values are compared with the uniform expectation for real target–program tests and non-targeting pseudo-target tests.
+''',
+                  7: '''## S4c — biological-replicate effect concordance
+
+Target–program beta estimates are matched between biological replicates within each day. NTC rows and non-finite effects are removed. Each retained target must have at least 20 target-carrying cells represented in the original cNMF usage matrix in both replicates. Pooled full-day p values are BH-adjusted separately within each day across all finite real target–program tests, and matched effects are retained when pooled q ≤ 0.10.
+
+The default selection uses skew-calibrated pooled p values. When skew-calibrated files are unavailable, the recorded empirical fallback is used. There is no effect-size trimming and no automatic top-N fallback.
+''',
+              },
+              'notebooks/supplementary/Figure_S06.ipynb': {
+                  0: '''# Figure S6 — integrated annotation of cNMF programs across D0–D3
+
+This notebook generates the day-grouped program-annotation panels for D0–D3. It combines perturbation-effect estimates, cNMF gene loadings, day-specific motif enrichment, motif-cluster annotations, and compiled MoDISco contribution-weight matrices.
+
+For each day, the analysis selects program-specific regulators, curated marker genes, and enriched motifs; computes shared display scales; and renders aligned heatmaps with significance marks and vector motif logos. The active motif inputs are the minimum-10-carrier enrichment table, current motif-cluster map, and standard compiled MoDISco H5.
+''',
+                  2: '''## Load data, select regulators, marker genes, and motifs, and compute shared scales
+''',
+                  4: '''## Render per-day and combined panels
+''',
+              },
+          }
+
+          banned = re.compile(
+              r'(?i)(source[- ]verified|\brecovered\b|\bported?\b|re-scripted|'
+              r'notebook launcher|old notebook|previous notebook|archived|sherlock|'
+              r'source notebook|original notebook|executed source cells|re-assembled|'
+              r'reassembled|attached notebook|figure assembly|prior port)'
+          )
+
+          report = []
+          for raw_path, cell_map in replacements.items():
+              path = Path(raw_path)
+              nb = json.loads(path.read_text(encoding='utf-8'))
+              before_cells = json.loads(json.dumps(nb['cells']))
+              before_non_markdown = [cell for cell in before_cells if cell.get('cell_type') != 'markdown']
+              before_hash = hashlib.sha256(
+                  json.dumps(before_non_markdown, sort_keys=True, separators=(',', ':')).encode()
+              ).hexdigest()
+
+              observed_markdown = {i for i, cell in enumerate(nb['cells']) if cell.get('cell_type') == 'markdown'}
+              expected_markdown = set(cell_map)
+              if observed_markdown != expected_markdown:
+                  raise RuntimeError(
+                      f'{path}: markdown cell indices changed. observed={sorted(observed_markdown)} '
+                      f'expected={sorted(expected_markdown)}'
+                  )
+
+              for index, text in cell_map.items():
+                  cell = nb['cells'][index]
+                  if cell.get('cell_type') != 'markdown':
+                      raise RuntimeError(f'{path}: cell {index} is not markdown')
+                  cell['source'] = text.splitlines(keepends=True)
+
+              after_non_markdown = [cell for cell in nb['cells'] if cell.get('cell_type') != 'markdown']
+              after_hash = hashlib.sha256(
+                  json.dumps(after_non_markdown, sort_keys=True, separators=(',', ':')).encode()
+              ).hexdigest()
+              if before_hash != after_hash:
+                  raise RuntimeError(f'{path}: code cells or embedded outputs changed')
+
+              markdown_text = '\n'.join(
+                  ''.join(cell.get('source', [])) if isinstance(cell.get('source'), list)
+                  else str(cell.get('source', ''))
+                  for cell in nb['cells'] if cell.get('cell_type') == 'markdown'
+              )
+              match = banned.search(markdown_text)
+              if match:
+                  raise RuntimeError(f'{path}: prohibited internal-history wording remains: {match.group(0)!r}')
+
+              for index, cell in enumerate(nb['cells']):
+                  if cell.get('cell_type') == 'code':
+                      source = cell.get('source', '')
+                      if isinstance(source, list):
+                          source = ''.join(source)
+                      compile(source, f'{path}:cell-{index}', 'exec')
+
+              path.write_text(json.dumps(nb, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+              reread = json.loads(path.read_text(encoding='utf-8'))
+              reread_non_markdown = [cell for cell in reread['cells'] if cell.get('cell_type') != 'markdown']
+              reread_hash = hashlib.sha256(
+                  json.dumps(reread_non_markdown, sort_keys=True, separators=(',', ':')).encode()
+              ).hexdigest()
+              if reread_hash != before_hash:
+                  raise RuntimeError(f'{path}: serialized code/output fingerprint changed')
+
+              report.append({
+                  'path': str(path),
+                  'markdown_cells_rewritten': len(cell_map),
+                  'non_markdown_sha256': before_hash,
+                  'embedded_output_count': sum(
+                      len(cell.get('outputs', []))
+                      for cell in reread['cells'] if cell.get('cell_type') == 'code'
+                  ),
+              })
+
+          Path('/tmp/markdown_cleanup_report.json').write_text(
+              json.dumps(report, indent=2) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(report, indent=2))
+          PY
+      - name: Verify only notebook markdown changed
+        run: |
+          expected=$(cat <<'EOF'
+          notebooks/main/Figure_01.ipynb
+          notebooks/main/Figure_02.ipynb
+          notebooks/main/Figure_03.ipynb
+          notebooks/main/Figure_04.ipynb
+          notebooks/supplementary/Figure_S02.ipynb
+          notebooks/supplementary/Figure_S04.ipynb
+          notebooks/supplementary/Figure_S06.ipynb
+          EOF
+          )
+          actual=$(git diff --name-only | sort)
+          test "$actual" = "$(printf '%s\n' "$expected" | sort)"
+          git diff --check
+      - name: Commit validated markdown cleanup
+        run: |
+          git config user.name 'Tri Nguyen'
+          git config user.email '72826864+edtnguyen@users.noreply.github.com'
+          git add notebooks/main notebooks/supplementary
+          git commit -m 'Present figure notebooks as manuscript reproduction workflows' -m 'Rewrite markdown in Figures 1-4, S2, S4, and S6 to describe the scientific inputs, calculations, filters, and outputs without internal reconstruction history. Code cells, execution counts, and embedded outputs are unchanged.'
+          git push --force origin HEAD:cleanup/figure-notebook-markdown-candidate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: figure-notebook-markdown-cleanup-report
+          path: /tmp/markdown_cleanup_report.json
+          retention-days: 3
