@@ -1,0 +1,13 @@
+experiment_root: /oak/stanford/groups/engreitz/Users/tri/Perturb-Seq/analysis/250730_eTN10_Parsev3_mixediPSC_K562
+override_environment_variable: CCPERTURBSEQ_FIGURE_S02_ROOT
+source_notebook: K562_hiPSC_ParseV3_plotnine_figure_reproduction.ipynb
+panels:
+- i
+- j
+- l
+- m
+- n
+excluded_panels:
+  k: Gene-detection saturation from the earlier hiPSC-only benchmark, not the mixed
+    hiPSC-K562 experiment.
+source_role: provenance_only_not_a_runtime_input
