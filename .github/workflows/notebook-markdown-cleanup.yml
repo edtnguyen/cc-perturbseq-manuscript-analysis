@@ -28,9 +28,10 @@ jobs:
           start = next(i for i, line in enumerate(payload) if line.strip() == "python - <<'PY'")
           end = next(i for i in range(start + 1, len(payload)) if payload[i].strip() == 'PY')
           body = payload[start + 1:end]
-          nonempty = [line for line in body if line.strip()]
-          indent = min(len(line) - len(line.lstrip()) for line in nonempty)
-          script = '\n'.join(line[indent:] if line.strip() else '' for line in body) + '\n'
+          first = next(line for line in body if line.strip())
+          indent = len(first) - len(first.lstrip())
+          prefix = ' ' * indent
+          script = '\n'.join(line[indent:] if line.startswith(prefix) else line for line in body) + '\n'
           Path('/tmp/clean_figure_notebook_markdown.py').write_text(script, encoding='utf-8')
           compile(script, '/tmp/clean_figure_notebook_markdown.py', 'exec')
           PY
