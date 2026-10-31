@@ -1,0 +1,5 @@
+# Curated figure notebooks under notebooks/ stay in ordinary Git so GitHub can
+# render and diff them. Full-fidelity source notebooks copied from Sherlock are
+# archived under recovery/sherlock_notebooks/ and stored with Git LFS.
+recovery/sherlock_notebooks/*.ipynb filter=lfs diff=lfs merge=lfs -text
+recovery/sherlock_notebooks/**/*.ipynb filter=lfs diff=lfs merge=lfs -text

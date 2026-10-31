@@ -1,0 +1,239 @@
+figures:
+  Figure_01:
+    title: Figure 1 — A time-resolved map of regulators and gene programs during arterial endothelial differentiation
+    scope: Panels a–d
+    manuscript: Working CC-Perturb-seq EC Differentiation - Text V3
+    panels:
+      - panel: a
+        description: Experimental framework schematic
+        type: manual_asset
+        required_inputs:
+          - assets.figure1a_schematic
+        candidate_sources:
+          - Editable source artwork or deliberate redraw
+      - panel: b
+        description: Genome-wide CRISPRi screen volcano plot
+        type: code
+        required_inputs:
+          - screen.genomewide_mageck_pos_vs_neg
+          - screen.genomewide_utest_pos_vs_neg
+        candidate_sources:
+          - recovery/raw_downloads/Pos_vs_Neg_volcano_plotnine_MAGECK_FDR_pathway_colored_v4_bundle/Pos_vs_Neg_volcano_plotnine_MAGECK_FDR_pathway_colored_v4.py
+          - recovery/raw_downloads/make_genomewide_screen_volcano_final.py
+      - panel: c
+        description: Estimated Day 3 EC fraction for selected genes
+        type: code
+        required_inputs:
+          - ccperturbseq.d3_anndata
+          - ccperturbseq.guide_assignment
+          - ccperturbseq.ec_fraction_table
+        candidate_sources:
+          - guide-level EC-percentage and permutation-test scripts in the recovery branch
+      - panel: d
+        description: Integrated D0–D3 UMAP colored by selected cNMF program
+        type: code
+        required_inputs:
+          - ccperturbseq.integrated_anndata
+          - ccperturbseq.cnmf_usage
+          - ccperturbseq.program_annotations
+        candidate_sources:
+          - integrated-state-atlas and program-annotation notebooks in the recovery branches
+
+  Figure_02:
+    title: Figure 2 — Distinct perturbation programs converge on failed endothelial differentiation
+    scope: Panels a–f
+    manuscript: Working CC-Perturb-seq EC Differentiation - Text V3
+    panels:
+      - panel: a
+        description: Pairwise correlation of gene-level program effects
+        type: code
+        required_inputs:
+          - programde.effect_matrix_all_days
+          - ccperturbseq.target_metadata
+        candidate_sources:
+          - programDE Sherlock branch and imported Figure 2 scripts
+      - panel: b
+        description: Selected regulator-by-program effects and Day 3 EC output
+        type: code
+        required_inputs:
+          - programde.effect_matrix_all_days
+          - programde.qvalue_matrix_all_days
+          - ccperturbseq.ec_fraction_table
+        candidate_sources:
+          - programDE Sherlock branch and imported Figure 2 heatmap scripts
+      - panel: c
+        description: VEGF–KDR–PLCG1–PKC–ETV2 schematic
+        type: manual_asset
+        required_inputs:
+          - assets.figure2c_schematic
+        candidate_sources:
+          - Editable source artwork or deliberate redraw
+      - panel: d
+        description: Guide-level Day 3 EC fraction for ETV2, KDR, PLCG1 and PRKCD
+        type: code
+        required_inputs:
+          - ccperturbseq.ec_fraction_table
+        candidate_sources:
+          - guide-level EC-percentage plotting scripts
+      - panel: e
+        description: UMAPs of P17, P27, SLC8A1 and GATA4
+        type: code
+        required_inputs:
+          - ccperturbseq.integrated_anndata
+          - ccperturbseq.cnmf_usage
+        candidate_sources:
+          - state-atlas plotting notebooks
+      - panel: f
+        description: Carrier-seeded neighborhood enrichment for ETV2, KDR, PRKCD and PLCG1
+        type: code
+        required_inputs:
+          - ccperturbseq.integrated_anndata
+          - ccperturbseq.cnmf_usage
+          - ccperturbseq.guide_assignment
+        candidate_sources:
+          - recovery/raw_downloads/fig3_carrierseeded_neighborhood_panels_interactive_plotnine_style.ipynb and related notebooks
+
+  Figure_03_panels_b_d:
+    title: Figure 3 — Hippo signaling is required for efficient endothelial differentiation
+    scope: Panels b–d and f
+    manuscript: Working CC-Perturb-seq EC Differentiation - Text V3
+    panels:
+      - panel: b
+        description: P2/P34, CDH5/ACTC1 and Hippo carrier-seeded neighborhood UMAPs
+        type: code
+        required_inputs:
+          - ccperturbseq.integrated_anndata
+          - ccperturbseq.cnmf_usage
+          - ccperturbseq.guide_assignment
+        candidate_sources:
+          - recovery/raw_downloads/ipsc-ec.Hippo.figure.ipynb
+          - carrier-seeded neighborhood notebooks
+      - panel: c
+        description: Guide-level Day 3 EC fractions for NF2, LATS2, AMOTL2 and TAOK1
+        type: code
+        required_inputs:
+          - ccperturbseq.ec_fraction_table
+        candidate_sources:
+          - guide-level EC-percentage plotting scripts
+      - panel: d
+        description: Integrated P2/P34 perturbation effects, cNMF loadings and motif enrichment
+        type: mixed
+        required_inputs:
+          - programde.effect_matrix_all_days
+          - programde.qvalue_matrix_all_days
+          - ccperturbseq.cnmf_spectra
+          - multiome.enhancer_enrichment_results
+          - multiome.modisco_compiled_h5
+          - multiome.cluster_motif_map
+        candidate_sources:
+          - recovery/raw_downloads/3.chrombpnet_figures.py
+          - program-annotation notebooks
+      - panel: f
+        description: Hippo small-molecule time-course dotplots
+        type: code
+        required_inputs:
+          - hippo_timecourse.query_h5ad
+          - hippo_timecourse.reprojected_cnmf_h5ad
+        candidate_sources:
+          - recovered Hippo time-course notebooks
+
+  Figure_04_panels_d_e:
+    title: Figure 4 — Hippo signaling promotes ETV2 and suppresses alternative lateral-mesoderm fates
+    scope: Panels c–e
+    manuscript: Working CC-Perturb-seq EC Differentiation - Text V3
+    panels:
+      - panel: c
+        description: Hippo-pathway perturbation effects across differentiation stages
+        type: code
+        required_inputs:
+          - programde.effect_matrix_all_days
+          - programde.qvalue_matrix_all_days
+        candidate_sources:
+          - recovered Hippo program-effect notebooks
+      - panel: d
+        description: UMAPs of P15, P17, FLI1 and SLC8A1
+        type: code
+        required_inputs:
+          - ccperturbseq.integrated_anndata
+          - ccperturbseq.cnmf_usage
+        candidate_sources:
+          - state-atlas plotting notebooks
+      - panel: e
+        description: Integrated P15/P17 perturbation effects, cNMF loadings and motif enrichment
+        type: mixed
+        required_inputs:
+          - programde.effect_matrix_all_days
+          - programde.qvalue_matrix_all_days
+          - ccperturbseq.cnmf_spectra
+          - multiome.enhancer_enrichment_results
+          - multiome.modisco_compiled_h5
+          - multiome.cluster_motif_map
+        candidate_sources:
+          - programDE:notebooks/P17_D2_P27_D3_motif_rank.ipynb
+          - program-annotation notebooks
+
+  Figure_S02:
+    title: Figure S2 — Mixed hiPSC–K562 Parse v3 compatibility experiment
+    scope: Panels i, j, l, m and n only
+    manuscript: Working CC-Perturb-seq EC Differentiation - Text V3
+    panels:
+      - panel: i
+        description: Matched-pool guide recovery by transcriptomic cell type and primer
+        type: code
+        required_inputs: []
+        candidate_sources:
+          - recovery/raw_downloads/250904.Parse.v3.iPSC.K562.copy.ipynb
+      - panel: j
+        description: Guide-pool specificity by transcriptomic cell type and primer
+        type: code
+        required_inputs: []
+        candidate_sources:
+          - recovery/raw_downloads/250904.Parse.v3.iPSC.K562.copy.ipynb
+      - panel: l
+        description: Top-guide UMI capture including the no-guide-primer control
+        type: code
+        required_inputs: []
+        candidate_sources:
+          - recovery/raw_downloads/250904.Parse.v3.iPSC.K562.copy.ipynb
+      - panel: m
+        description: Transcriptome UMI recovery and read-depth saturation
+        type: code
+        required_inputs: []
+        candidate_sources:
+          - recovery/raw_downloads/250904.Parse.v3.iPSC.K562.copy.ipynb
+      - panel: n
+        description: hiPSC-pool versus K562-pool guide mixing after the 3-UMI cell-guide filter
+        type: code
+        required_inputs: []
+        candidate_sources:
+          - recovery/raw_downloads/250904.Parse.v3.iPSC.K562.copy.ipynb
+
+  Figure_S04:
+    title: Figure S4 — Program CRT calibration and biological-replicate effect concordance
+    scope: Panels b and c only
+    manuscript: Working CC-Perturb-seq EC Differentiation - Text V3
+    panels:
+      - panel: b
+        description: Day-specific empirical CRT Q–Q plots for real and NTC pseudo-targets
+        type: code
+        required_inputs: []
+        candidate_sources:
+          - programDE/notebooks/iPSC_EC_QQ_full_covariates_with_replicate_correlation_bundle/iPSC_EC_QQ_full_covariates_with_replicate_correlation.ipynb
+      - panel: c
+        description: Biological-replicate concordance of matched target-by-program effect sizes
+        type: code
+        required_inputs: []
+        candidate_sources:
+          - programDE/notebooks/iPSC_EC_QQ_full_covariates_with_replicate_correlation_bundle/iPSC_EC_QQ_full_covariates_with_replicate_correlation.ipynb
+
+  Figure_S06:
+    title: Figure S6 — Integrated annotation of cNMF programs across hiPSC–arterial EC differentiation
+    scope: All day-grouped program-annotation panels
+    manuscript: Working CC-Perturb-seq EC Differentiation - Text V3
+    panels:
+      - panel: all
+        description: Aligned perturbation-effect, gene-loading and motif-enrichment heatmaps for D0–D3
+        type: code
+        required_inputs: []
+        candidate_sources:
+          - programDE/notebooks/program_annotation_panels_D0_D1_D2_D3_rotated_logos_D2_extra_D3_trimmed_markers.ipynb

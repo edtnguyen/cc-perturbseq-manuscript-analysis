@@ -1,0 +1,29 @@
+name: Validate portable GEO objects
+on:
+  push:
+    branches: [curation/figure-reproduction-v1]
+    paths:
+      - 'src/cc_perturbseq/geo_submission.py'
+      - 'notebooks/submission/**'
+      - 'tests/test_geo_submission.py'
+      - 'config/geo-reproduction-requirements.txt'
+      - '.github/workflows/validate-geo-export.yml'
+  workflow_dispatch:
+jobs:
+  synthetic-roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      NUMBA_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install public reproduction environment
+        run: python -m pip install -r config/geo-reproduction-requirements.txt
+      - name: Export actual HDF5 fixtures, remove private inputs, reproduce original panels
+        run: PYTHONPATH=src python -m pytest -q tests/test_geo_submission.py

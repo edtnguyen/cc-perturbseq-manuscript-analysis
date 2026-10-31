@@ -1,0 +1,120 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import sys
+
+import pytest
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from cc_perturbseq.motif_sources import (  # noqa: E402
+    CANONICAL_CLUSTER_MOTIF_MAP_PATH,
+    CANONICAL_ENHANCER_ENRICHMENT_PATH,
+    CANONICAL_MODISCO_COMPILED_H5_PATH,
+    canonical_enhancer_enrichment_path,
+    canonical_motif_input_manifest,
+    canonical_motif_logo_inputs,
+)
+
+ENRICHMENT = (
+    "/oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/"
+    "analysis/2.tf_enrichment_in_programs/"
+    "enhancer_enrichment_results_min10.tsv"
+)
+CLUSTER_MAP = (
+    "/oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/"
+    "analysis/0.0.motif_id_annotation/tables/"
+    "cluster_to_tf_motif_id_mapping.tsv"
+)
+MODISCO_H5 = (
+    "/oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/"
+    "results/compendium/modisco_compiled/modisco_compiled.h5"
+)
+
+
+def _notebook_text(path: Path) -> str:
+    notebook = json.loads(path.read_text(encoding="utf-8"))
+    return "\n".join(
+        "".join(cell.get("source", []))
+        if isinstance(cell.get("source", []), list)
+        else cell.get("source", "")
+        for cell in notebook["cells"]
+    )
+
+
+def test_tracked_motif_paths_are_exact_selected_files():
+    config = yaml.safe_load(
+        (ROOT / "config" / "paths.example.yaml").read_text(encoding="utf-8")
+    )
+    multiome = config["multiome"]
+    assert multiome["enhancer_enrichment_results"] == ENRICHMENT
+    assert multiome["cluster_motif_map"] == CLUSTER_MAP
+    assert multiome["modisco_compiled_h5"] == MODISCO_H5
+    assert str(CANONICAL_ENHANCER_ENRICHMENT_PATH) == ENRICHMENT
+    assert str(CANONICAL_CLUSTER_MOTIF_MAP_PATH) == CLUSTER_MAP
+    assert str(CANONICAL_MODISCO_COMPILED_H5_PATH) == MODISCO_H5
+
+
+def test_canonical_manifest_contains_all_three_motif_specific_inputs():
+    manifest = canonical_motif_input_manifest(require_exists=False)
+    assert {key: str(value) for key, value in manifest.items()} == {
+        "enhancer_enrichment_results": ENRICHMENT,
+        "cluster_motif_map": CLUSTER_MAP,
+        "modisco_compiled_h5": MODISCO_H5,
+    }
+
+
+def test_motif_contract_rejects_archived_and_profile_alternatives():
+    with pytest.raises(ValueError, match="active min10"):
+        canonical_enhancer_enrichment_path(
+            "/oak/stanford/groups/engreitz/Users/opushkar/multiome_ipsc_ec/"
+            "analysis/archive_v1/2.tf_enrichment_in_programs/"
+            "enhancer_enrichment_results.tsv",
+            require_exists=False,
+        )
+    with pytest.raises(ValueError, match="Motif-logo inputs"):
+        canonical_motif_logo_inputs(
+            configured_cluster_map=(
+                "/oak/stanford/groups/engreitz/Users/opushkar/"
+                "multiome_ipsc_ec/analysis/archive_v1/tables/"
+                "cluster_to_tf_motif_id_mapping.tsv"
+            ),
+            configured_modisco_h5=(
+                "/oak/stanford/groups/engreitz/Users/opushkar/"
+                "multiome_ipsc_ec/results/compendium/"
+                "modisco_compiled_profile/modisco_compiled.h5"
+            ),
+            require_exists=False,
+        )
+
+
+def test_figure3_and_figure4_lock_all_three_motif_inputs():
+    for name in ("figure3_panels.py", "figure4_panels.py"):
+        text = (
+            ROOT / "src" / "cc_perturbseq" / name
+        ).read_text(encoding="utf-8")
+        assert "canonical_enhancer_enrichment_path" in text
+        assert "canonical_motif_logo_inputs" in text
+        assert "configured_cluster_map=cluster_map_path" in text
+        assert "configured_modisco_h5=modisco_h5_path" in text
+
+
+
+
+
+
+def test_retained_motif_notebook_code_cells_compile():
+    for name in ("Figure_S04.ipynb", "Figure_S06.ipynb"):
+        path = ROOT / "notebooks" / "supplementary" / name
+        notebook = json.loads(path.read_text(encoding="utf-8"))
+        for index, cell in enumerate(notebook["cells"]):
+            if cell.get("cell_type") == "code":
+                source = cell.get("source", [])
+                compile(
+                    "".join(source) if isinstance(source, list) else source,
+                    f"{name}:cell-{index}",
+                    "exec",
+                )

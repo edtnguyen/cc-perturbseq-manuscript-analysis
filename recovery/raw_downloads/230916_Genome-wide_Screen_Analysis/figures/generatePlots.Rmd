@@ -1,0 +1,119 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+setwd("~/Desktop/Figures_Tables")
+fileName = "d3pos_d3neg"
+data <- read.csv(paste(fileName, '.csv',sep = ''))
+```
+
+
+VOLCANO PLOT
+```{r}
+data$X.log..U.Test.P. <- as.numeric(data$Log.U.Test.P)
+
+data$NonHit <- data$Gene %in% c('ADCY2','ANP32E','C17ORF49','CYC1','DCTN2','EME2','ETS1','FEN1','FUT11','GOLT1B','GSPT1','LAMTOR4','LUZP6','MRPL28','MRPL47','PCBP2','PGRMC2','PLEKHG1','PRSS8','PTMS','RANGRF','RHOBTB3','RPL37A','SERF2','SERPING1','THBD','TMTM41B','UBE2E1','YARS2','ZNF281')
+
+# Highlight significant points
+plot <- ggplot(data, aes(x = Average.U.Test.FC, y =  X.log..U.Test.P.)) +
+  geom_point(alpha = 0.4, size = 1.75, aes(color = NonHit)) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"),
+                     labels = c("TRUE" = "Non-Hit", "FALSE" = "Hit")) +
+  labs(x = "Log2FC", y = "-Log10(P)", color = "Genes Tested") +
+  theme_bw(base_size = 16) +
+  labs(x = "Log2FC", y = "-Log10(P)") +
+  ggtitle("D3 vs D0") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave(paste(fileName,"_volcanoplot.pdf",sep = ""), plot = plot, width = 8, height = 6, dpi = 300)
+```
+
+
+Original vs Validation FC
+```{r}
+data$Original.FC <- as.numeric(data$Original.FC)
+data$Average.U.Test.FC <- as.numeric(data$Average.U.Test.FC)
+
+temp <- na.omit(data[, c("Original.FC", "Average.U.Test.FC")])
+#correlation <- cor(temp$Original.FC, temp$Average.U.Test.FC)
+
+lm_fit <- lm(Average.U.Test.FC ~ Original.FC, data = temp)
+# Extract R-squared value
+r_squared <- summary(lm_fit)$r.squared
+
+plot <- ggplot(data, aes(x = Original.FC, y = Average.U.Test.FC)) +
+  geom_point(alpha = 0.4, size = 1.75, aes(color = NonHit)) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"),
+                     labels = c("TRUE" = "Non-Hit", "FALSE" = "Hit")) +
+  labs(x = "Log2FC", y = "-Log10(P)", color = "Genes Tested") +
+  theme_bw(base_size = 16) +
+  labs(x = "Original Screen log2FC", y = "Validation Screen Log2FC") +
+  ggtitle("D3 vs D0 FC Comparison") +
+  annotate("text", x = -Inf, y = Inf, label = paste("R²:", round(r_squared, 2)),
+           hjust = -0.2, vjust = 2, size = 5, color = "red") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave(paste(fileName,"_Original_Comparison.pdf",sep = ""), plot = plot, width = 8, height = 6, dpi = 300)
+
+```
+
+BR1 vs BR2 FC
+```{r}
+data$U.Test.FC.BR1 <- as.numeric(data$U.Test.FC.BR1)
+data$U.Test.FC.BR2 <- as.numeric(data$U.Test.FC.BR2)
+
+temp <- na.omit(data[, c("U.Test.FC.BR1", "U.Test.FC.BR2")])
+
+lm_fit <- lm(U.Test.FC.BR2 ~ U.Test.FC.BR1, data = temp)
+r_squared <- summary(lm_fit)$r.squared
+
+
+plot <- ggplot(data, aes(x = U.Test.FC.BR1, y = U.Test.FC.BR2)) +
+  geom_point(alpha = 0.4, size = 1.75, aes(color = NonHit)) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"),
+                     labels = c("TRUE" = "Non-Hit", "FALSE" = "Hit")) +
+  labs(x = "Log2FC", y = "-Log10(P)", color = "Genes Tested") +
+  theme_bw(base_size = 16) +
+  labs(x = "BR1 log2FC", y = "BR2 Log2FC") +
+  ggtitle("D3 ECs vs D0 Bio-replicate FC Comparison") +
+  annotate("text", x = -Inf, y = Inf, label = paste("R²:", round(r_squared, 2)),
+           hjust = -0.2, vjust = 2, size = 5, color = "red") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave(paste(fileName,"_BioReplicate_Comparison.pdf",sep = ""), plot = plot, width = 8, height = 6, dpi = 300)
+
+```
+
+
+```{r}
+data$Average.U.Test.FC <- as.numeric(data$Average.U.Test.FC)
+data$Normalized.Mageck.FC <- as.numeric(data$Normalized.Mageck.FC)
+
+temp <- na.omit(data[, c("Average.U.Test.FC", "Normalized.Mageck.FC")])
+
+lm_fit <- lm(Normalized.Mageck.FC ~ Average.U.Test.FC, data = temp)
+r_squared <- summary(lm_fit)$r.squared
+
+
+plot <- ggplot(data, aes(x = Average.U.Test.FC, y = Normalized.Mageck.FC)) +
+  geom_point(alpha = 0.4, size = 1.75, aes(color = NonHit)) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"),
+                     labels = c("TRUE" = "Non-Hit", "FALSE" = "Hit")) +
+  labs(x = "Log2FC", y = "-Log10(P)", color = "Genes Tested") +
+  theme_bw(base_size = 16) +
+  labs(x = "U Test log2FC", y = "Mageck Log2FC") +
+  ggtitle("D3 ECs vs D0: U Test vs Mageck FC") +
+  annotate("text", x = -Inf, y = Inf, label = paste("R²:", round(r_squared, 2)),
+           hjust = -0.2, vjust = 2, size = 5, color = "red") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave(paste(fileName,"_UTest_Mageck_Comparison.pdf",sep = ""), plot = plot, width = 8, height = 6, dpi = 300)
+
+```
+
