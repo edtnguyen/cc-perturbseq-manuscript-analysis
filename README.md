@@ -17,8 +17,6 @@ Supplementary figures:
 - `notebooks/supplementary/Figure_S04.ipynb`
 - `notebooks/supplementary/Figure_S06.ipynb`
 
-No other analysis notebooks are included on `main`.
-
 ## Supporting code
 
 - `src/cc_perturbseq/` — panel calculations, plotting functions, data readers, validation, CRT and post-CRT utilities
@@ -33,7 +31,7 @@ Run notebooks from the repository checkout so they can locate `src/cc_perturbseq
 
 Machine-specific paths should be placed in an untracked `config/paths.local.yaml`, using `config/paths.example.yaml` as the starting point. Local values are merged over the tracked defaults.
 
-Large single-cell objects and other primary analysis inputs are not stored in Git. Public processed-data objects and raw sequencing files are intended to be distributed through GEO; institutional paths in the example configuration document the original analysis inputs.
+Large single-cell objects and other primary analysis inputs are not stored in Git. Public processed-data objects and raw sequencing files are intended to be distributed through GEO and IGVF Portal
 
 Before running the figure notebooks, the main static preflight can be executed with:
 
