@@ -2,6 +2,9 @@ name: S4 post-CRT filtering validation
 on:
   push:
     branches: [repair/s4-postcrt-publish]
+concurrency:
+  group: s4-postcrt-publish
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
@@ -29,15 +32,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Apply prepared correction to verified baseline
+      - name: Apply prepared correction and compare to original source
         run: |
           cp src/cc_perturbseq/figure_s04_postcrt.py /tmp/
-          cp tests/test_s4_postcrt.py .repair/apply_s4_postcrt.py /tmp/
+          cp tests/test_s4_postcrt.py .repair/apply_s4_postcrt.py .repair/stable_source_hashes.py /tmp/
           git checkout --detach e386e2420599e0b40f7fd828b2f12bbd51744c93
           cp /tmp/figure_s04_postcrt.py src/cc_perturbseq/
           cp /tmp/test_s4_postcrt.py tests/
           python -m pip install nbformat
           python /tmp/apply_s4_postcrt.py
+          python /tmp/stable_source_hashes.py
       - name: Install tested scientific dependencies
         run: |
           python -m pip install -r config/geo-reproduction-requirements.txt logomaker==0.8.7
