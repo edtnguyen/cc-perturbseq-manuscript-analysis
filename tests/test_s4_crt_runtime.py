@@ -175,3 +175,14 @@ def test_entire_s4_notebook_recompute_branch_fresh_python(tmp_path):
     assert report['status']=='completed' and report['sceptre_R_required'] is False
     assert len(list((output/'Figure_S04/panel_b').glob('*.svg')))==4
     assert len(list((output/'Figure_S04/panel_c').glob('*.svg')))==5
+
+    panel_c=output/'Figure_S04/panel_c'
+    provenance=json.loads((panel_c/'target_cell_count_provenance.json').read_text())
+    assert provenance['mode']=='reconstructed_from_recorded_inputs'
+    counts=pd.read_csv(panel_c/'DIAGNOSTIC_target_cell_counts_by_replicate.csv')
+    assert counts.n_target_cells_with_cnmf_usage.eq(100).all()
+    assert len(counts)==16
+    selected=pd.read_csv(next(panel_c.glob('pooled_selected_replicate_effect_pairs_*.csv')))
+    assert selected.pooled_qvalue.le(0.10).all()
+    assert selected.n_target_cells_x.ge(20).all() and selected.n_target_cells_y.ge(20).all()
+    assert set(selected.day)=={'d0','d1','d2','d3'}

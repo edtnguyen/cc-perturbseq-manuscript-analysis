@@ -151,15 +151,37 @@ def test_s4_entire_notebook_from_numeric_files_without_old_notebook(tmp_path):
                              'beta_path':str(path.relative_to(model/'biological_replicate_effects'))})
     pd.DataFrame(points).to_csv(model/'all_days_QQ_points.csv',index=False)
     pd.DataFrame(manifest).to_csv(model/'biological_replicate_effects/replicate_beta_manifest.csv',index=False)
+    counts = []
+    for day in ['d0','d1','d2','d3']:
+        day_dir = model/day
+        day_dir.mkdir(parents=True, exist_ok=True)
+        pvalues = pd.DataFrame(
+            [[0.001,0.002,0.8], [0.0001,0.02,0.8], [0.001,0.3,0.8], [1e-100]*3],
+            index=['A','B','C','NTC'], columns=['P0','P1','P2'])
+        pvalues.to_csv(day_dir/f'{day}_target_pvalues_skew_wide.tsv', sep='\t')
+        for sample in ['r1','r2']:
+            for target in ['A','B','C']:
+                counts.append({'day':day, 'biological_sample':sample, 'target_name':target,
+                    'n_target_cells_with_cnmf_usage':19 if (sample,target)==('r2','B') else 20})
+    diagnostic = model/'biological_replicate_effects/plots/DIAGNOSTIC_target_cell_counts_by_replicate.csv'
+    diagnostic.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(counts).to_csv(diagnostic, index=False)
     output=root/'outputs'
     _run_notebook(root,'Figure_S04.ipynb',{'outputs':{'root':str(output)}},
                   {'CCPERTURBSEQ_S4_RESULTS':str(model)})
     b=output/'Figure_S04/panel_b';c=output/'Figure_S04/panel_c'
     assert len(list(b.glob('*.svg')))==4
     assert len(list(c.glob('*.svg')))==5
-    pairs=pd.read_csv(c/'biological_replicate_DE_program_effect_pairs.csv')
-    assert len(pairs)==36
-    assert 'NTC' not in set(pairs.target_name)
+    unfiltered = pd.read_csv(c/'S4c_unfiltered_real_effect_pairs.csv')
+    pairs = pd.read_csv(next(c.glob('pooled_selected_replicate_effect_pairs_*.csv')))
+    assert len(unfiltered)==36 and len(pairs)==12
+    assert set(zip(pairs.target_name,pairs.program_name))=={('A','P0'),('A','P1'),('C','P0')}
+    assert set(pairs.target_name)=={'A','C'}
+    assert pairs.pooled_qvalue.le(0.10).all()
+    assert pairs.n_target_cells_x.ge(20).all() and pairs.n_target_cells_y.ge(20).all()
+    filters=pd.read_csv(c/'S4c_filter_counts.csv')
+    assert filters.after_target_cell_filter.tolist()==[6]*4
+    assert filters.selected_pairs.tolist()==[3]*4
 
 
 def _s6_inputs(root):
