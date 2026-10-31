@@ -1,0 +1,79 @@
+name: Audit figure notebook markdown
+
+on:
+  push:
+    branches: [cleanup/figure-notebook-markdown]
+    paths: [.github/workflows/notebook-markdown-audit.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Inventory markdown and fingerprint non-markdown content
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          paths = [
+              Path('notebooks/main/Figure_01.ipynb'),
+              Path('notebooks/main/Figure_02.ipynb'),
+              Path('notebooks/main/Figure_03.ipynb'),
+              Path('notebooks/main/Figure_04.ipynb'),
+              Path('notebooks/supplementary/Figure_S02.ipynb'),
+              Path('notebooks/supplementary/Figure_S04.ipynb'),
+              Path('notebooks/supplementary/Figure_S06.ipynb'),
+          ]
+
+          inventory = []
+          fingerprints = {}
+          lines = []
+
+          for path in paths:
+              nb = json.loads(path.read_text(encoding='utf-8'))
+              lines.extend(['=' * 100, str(path), '=' * 100])
+              code_output_payload = []
+              for index, cell in enumerate(nb.get('cells', [])):
+                  if cell.get('cell_type') == 'markdown':
+                      source = cell.get('source', '')
+                      if isinstance(source, list):
+                          source = ''.join(source)
+                      inventory.append({
+                          'path': str(path),
+                          'cell_index': index,
+                          'cell_id': cell.get('id'),
+                          'source': source,
+                      })
+                      lines.extend([
+                          '',
+                          f'--- markdown cell {index} id={cell.get("id")!r} ---',
+                          source,
+                      ])
+                  else:
+                      code_output_payload.append(cell)
+              fingerprints[str(path)] = hashlib.sha256(
+                  json.dumps(code_output_payload, sort_keys=True, separators=(',', ':')).encode()
+              ).hexdigest()
+
+          Path('/tmp/markdown_inventory.txt').write_text('\n'.join(lines), encoding='utf-8')
+          Path('/tmp/markdown_inventory.json').write_text(json.dumps(inventory, indent=2), encoding='utf-8')
+          Path('/tmp/non_markdown_fingerprints.json').write_text(json.dumps(fingerprints, indent=2), encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: figure-notebook-markdown-audit
+          path: |
+            /tmp/markdown_inventory.txt
+            /tmp/markdown_inventory.json
+            /tmp/non_markdown_fingerprints.json
+          retention-days: 3
