@@ -1,0 +1,79 @@
+name: S4 post-CRT filtering validation
+on:
+  push:
+    branches: [repair/s4-postcrt-publish]
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      NUMBA_NUM_THREADS: '2'
+      PROGRAMDE_REAL_ROOT: ${{ github.workspace }}/_programde_validation
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: edtnguyen/programDE
+          ref: 11cfa3f5d9c8d400c15cd15e1e550fc11fe0f4f9
+          path: _programde_validation
+          lfs: false
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply prepared correction to verified baseline
+        run: |
+          cp src/cc_perturbseq/figure_s04_postcrt.py /tmp/
+          cp tests/test_s4_postcrt.py .repair/apply_s4_postcrt.py /tmp/
+          git checkout --detach e386e2420599e0b40f7fd828b2f12bbd51744c93
+          cp /tmp/figure_s04_postcrt.py src/cc_perturbseq/
+          cp /tmp/test_s4_postcrt.py tests/
+          python -m pip install nbformat
+          python /tmp/apply_s4_postcrt.py
+      - name: Install tested scientific dependencies
+        run: |
+          python -m pip install -r config/geo-reproduction-requirements.txt logomaker==0.8.7
+          python -c 'import anndata, mudata, muon; print("Real H5MU readers available")'
+      - name: Full repository and real programDE regression
+        run: |
+          set -o pipefail
+          PYTHONPATH=src python -m pytest -q --basetemp=/tmp/s4-postcrt-fixtures tests 2>&1 | tee /tmp/s4-postcrt-tests.log
+          python scripts/preflight_main_figure_notebooks.py 2>&1 | tee /tmp/s4-postcrt-preflight.log
+      - name: Publish tested candidate only
+        run: |
+          git config user.name 'Tri Nguyen'
+          git config user.email '72826864+edtnguyen@users.noreply.github.com'
+          git add src/cc_perturbseq/figure_s04_postcrt.py notebooks/supplementary/Figure_S04.ipynb tests/test_s4_postcrt.py tests/test_standalone_figure_ports.py tests/test_s4_crt_runtime.py docs/S4_POSTCRT_SOURCE_FUNCTION_HASHES.json docs/S4_POSTCRT_FILTERS.md
+          git commit -m 'Restore final S4c post-CRT filters and selected-panel style' -m 'Port executed source cells 29-31: day-wide pooled BH q<=0.10, at least 20 unique target carriers with original cNMF usage in each replicate, explicit p-value provenance, and the final plotnine scatter style. Reuse completed p-values and beta estimates without CRT reruns. Export inclusion audits and selected-only receipts. Test numerical-only and full-recomputation notebook routes, actual H5MU metadata reconstruction, original helper ASTs, and the complete real-programDE regression suite.'
+          git push origin HEAD:refs/heads/repair/s4-postcrt-tested
+          git rev-parse HEAD | tee /tmp/s4-postcrt-candidate.txt
+          git archive --format=tar.gz --output=/tmp/s4-postcrt-tested-code.tar.gz HEAD src notebooks tests docs config scripts
+      - name: Collect validation evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/s4-postcrt-evidence
+          cp /tmp/s4-postcrt-tests.log /tmp/s4-postcrt-preflight.log /tmp/s4-postcrt-candidate.txt /tmp/s4-postcrt-tested-code.tar.gz /tmp/s4-postcrt-evidence/ 2>/dev/null || true
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          root=Path('/tmp/s4-postcrt-fixtures')
+          for p in root.rglob('*'):
+              if p.is_file() and (p.name in {'execution.log','s4_crt.log','s4_crt_runtime.json','real_programde_report.json','real_programde.log','target_cell_count_provenance.json','S4c_filter_counts.csv','S4c_selection_settings.json'}):
+                  dest=Path('/tmp/s4-postcrt-evidence')/p.relative_to(root)
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(p,dest)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: s4-postcrt-publish-validation
+          path: /tmp/s4-postcrt-evidence
+          retention-days: 7
