@@ -77,3 +77,8 @@ to generate just these two plotting bundles, then commit and push them. This doe
 not upload the H5MU files. See `docs/PUBLIC_DATA.md` for input-path options and
 publication instructions. The actual data are not present until that collection
 step has been run and its outputs published.
+
+Small plotting intermediates for the two GEO experiments can be prepared with
+`python scripts/export_compact_plot_data.py --apply`; no new integrated H5MU is
+needed. Only the compressed tables in `data/reproduction/geo_plots/` are committed.
+The optional GEO regeneration route remains available in the notebooks.

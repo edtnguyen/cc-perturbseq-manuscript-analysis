@@ -70,5 +70,10 @@
   "geo_plot_sources": {
     "hippo_timecourse": "/oak/stanford/groups/engreitz/Users/tri/CodeBase/cc-perturbseq-figure-reproduction/geo_release/Hippo_timecourse_integrated.h5mu",
     "ipsc_k562_mix": "/oak/stanford/groups/engreitz/Users/tri/CodeBase/cc-perturbseq-figure-reproduction/geo_release/iPSC_K562_mixed_integrated.h5mu"
+  },
+  "compact_plot_sources": {
+    "hippo_query": "/oak/stanford/groups/engreitz/Users/tri/Hippo_timecourse_rebuild/Hippo_timecourse_combined.h5ad",
+    "hippo_projection": "/oak/stanford/groups/engreitz/Users/tri/Hippo_timecourse_rebuild/perturbseq_cNMF_projection/reprojection_gene_set_comparison/Hippo_timecourse_reprojected_cNMF_compare_gene_sets.cell_x_program.h5ad",
+    "mixed_figure_dir": "/scratch/users/edtng/cc_perturbseq_manuscript_figures/Figure_S02"
   }
 }

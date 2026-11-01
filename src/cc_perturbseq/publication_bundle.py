@@ -119,7 +119,10 @@ def _beta_sources(model_root):
 
 
 
-def _geo_sources(config, *, hippo_h5mu=None, mixed_h5mu=None):
+def _geo_sources(config, *, hippo_h5mu=None, mixed_h5mu=None, compact=False):
+    if compact:
+        from .compact_plot_inputs import resolve_sources
+        return resolve_sources(config, hippo_h5mu=hippo_h5mu, mixed_h5mu=mixed_h5mu)
     configured = config.get("geo_plot_sources", {})
     sources = {
         "hippo_timecourse": hippo_h5mu or configured.get("hippo_timecourse"),
@@ -143,20 +146,25 @@ def _build_geo_plots(sources, parent):
     from .geo_plot_data import build_plot_bundle
     reports = {}
     for dataset, source in sources.items():
-        print(f"Generating {dataset} plotting inputs from {source.name}", flush=True)
-        manifest = build_plot_bundle(source, Path(parent) / dataset, dataset)
+        if isinstance(source, dict):
+            from .compact_plot_inputs import export_one
+            print(f"Exporting compact {dataset} plotting tables: {source['mode']}", flush=True)
+            manifest = export_one(source, Path(parent) / dataset, dataset)
+        else:
+            print(f"Generating {dataset} plotting inputs from {source.name}", flush=True)
+            manifest = build_plot_bundle(source, Path(parent) / dataset, dataset)
         reports[dataset] = {"source_sha256": manifest["source"]["sha256"],
                             "n_tables": len(manifest["tables"])}
     return reports
 
 
-def collect_geo_plots_only(root, source_config, *, hippo_h5mu=None, mixed_h5mu=None, apply=False, overwrite=False):
+def collect_geo_plots_only(root, source_config, *, hippo_h5mu=None, mixed_h5mu=None, apply=False, overwrite=False, compact_geo_inputs=False):
     """Add/update just the two independent plot bundles, preserving other data."""
     root = Path(root).expanduser().resolve()
     config = json.loads(Path(source_config).read_text())
-    sources = _geo_sources(config, hippo_h5mu=hippo_h5mu, mixed_h5mu=mixed_h5mu)
+    sources = _geo_sources(config, hippo_h5mu=hippo_h5mu, mixed_h5mu=mixed_h5mu, compact=compact_geo_inputs)
     for dataset, source in sources.items():
-        print(f"FOUND {dataset} submitted object: {source}")
+        print(f"FOUND {dataset} plotting inputs: {source}")
     if not apply:
         return {"status": "dry_run", "datasets": list(sources), "raw_objects_uploaded": False}
     destination = root / "data/reproduction/geo_plots"
@@ -178,11 +186,11 @@ def collect_geo_plots_only(root, source_config, *, hippo_h5mu=None, mixed_h5mu=N
             shutil.rmtree(staging)
 
 
-def collect(root, source_config, *, apply=False, overwrite=False, s4_results=None, target_counts=None, hippo_h5mu=None, mixed_h5mu=None):
+def collect(root, source_config, *, apply=False, overwrite=False, s4_results=None, target_counts=None, hippo_h5mu=None, mixed_h5mu=None, compact_geo_inputs=False):
     import pandas as pd
     root = Path(root).expanduser().resolve()
     config = json.loads(Path(source_config).read_text())
-    geo_sources = _geo_sources(config, hippo_h5mu=hippo_h5mu, mixed_h5mu=mixed_h5mu)
+    geo_sources = _geo_sources(config, hippo_h5mu=hippo_h5mu, mixed_h5mu=mixed_h5mu, compact=compact_geo_inputs)
     model_root = Path(s4_results or config["s4_results_source"]).expanduser().resolve()
     target_counts = target_counts or config.get("s4_target_counts_source")
     sources = [(row["key"], Path(row["source"]).expanduser()) for row in config["files"]]
@@ -209,7 +217,7 @@ def collect(root, source_config, *, apply=False, overwrite=False, s4_results=Non
         raise FileNotFoundError("Collection preflight found missing inputs:\n  " + "\n  ".join(problems))
     table, beta_sources = _beta_sources(model_root)
     if not apply:
-        print(f"Dry run: {len(config['files'])} exact companion files, two cell-order tables, validation adapter, and S4 numerical data would be collected. Use --apply to copy. Both GEO plotting bundles will be regenerated; integrated H5MU objects and raw CRT inputs are not copied.")
+        print(f"Dry run: {len(config['files'])} exact companion files, two cell-order tables, validation adapter, and S4 numerical data would be collected. Use --apply to copy. Both GEO plotting bundles will be exported using the selected input route; integrated H5MU objects and raw CRT inputs are not copied.")
         return {"status": "dry_run", "s4_model": str(model_root)}
     destination = root / "data/reproduction"
     if destination.exists() and any(p.name != "README.md" for p in destination.iterdir()) and not overwrite:
@@ -323,13 +331,14 @@ def main(argv=None):
     parser.add_argument("--hippo-h5mu", type=Path, help="Exact submitted Hippo integrated H5MU")
     parser.add_argument("--mixed-h5mu", type=Path, help="Exact submitted hiPSC-K562 integrated H5MU")
     parser.add_argument("--geo-plots-only", action="store_true", help="Collect only the two precomputed plotting bundles, leaving other companion data unchanged")
+    parser.add_argument("--compact-geo-inputs", action="store_true", help="Use the accepted Hippo H5AD pair and saved S2 tables, not newly built H5MUs")
     args = parser.parse_args(argv)
     if args.geo_plots_only:
         return collect_geo_plots_only(args.repo, args.source_config or args.repo / "config/publication_source_files.json",
-            hippo_h5mu=args.hippo_h5mu, mixed_h5mu=args.mixed_h5mu, apply=args.apply, overwrite=args.overwrite)
+            hippo_h5mu=args.hippo_h5mu, mixed_h5mu=args.mixed_h5mu, apply=args.apply, overwrite=args.overwrite, compact_geo_inputs=args.compact_geo_inputs)
     return collect(args.repo, args.source_config or args.repo / "config/publication_source_files.json", apply=args.apply,
             overwrite=args.overwrite, s4_results=args.s4_results, target_counts=args.target_counts,
-            hippo_h5mu=args.hippo_h5mu, mixed_h5mu=args.mixed_h5mu)
+            hippo_h5mu=args.hippo_h5mu, mixed_h5mu=args.mixed_h5mu, compact_geo_inputs=args.compact_geo_inputs)
 
 
 if __name__ == "__main__":
