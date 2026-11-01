@@ -1,0 +1,72 @@
+name: Audit public IGVF figure inputs
+on:
+  push:
+    branches: [audit/igvf-input-crosswalk-20261031]
+    paths: [.github/workflows/igvf-input-audit.yml]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - name: Collect public portal metadata and current code
+        run: |
+          mkdir -p /tmp/igvf-input-audit
+          python - <<'PY'
+          import concurrent.futures, datetime, json, re, urllib.parse, urllib.request
+          from pathlib import Path
+          OUT=Path('/tmp/igvf-input-audit')
+          sets=['IGVFDS9629VXQK','IGVFDS4708PCVX','IGVFDS0463XTUH','IGVFDS0991DBQZ','IGVFDS4402ZGWJ','IGVFDS2307REVJ']
+          known=['IGVFFI7756RKHT','IGVFFI4783YGLZ','IGVFFI5165BSGC','IGVFFI9086SWZC','IGVFFI8722NAWN','IGVFFI6740UUOG','IGVFFI7155BENM','IGVFFI2345GXDF','IGVFFI1608GIRE','IGVFFI3905TBLN','IGVFFI6431OXJN','IGVFFI0627NEZT','IGVFFI1924OSEM','IGVFFI1451CYGW','IGVFFI7077LERW','IGVFFI8282ATZQ','IGVFFI5157STFU','IGVFFI3975KRIX','IGVFFI8424MVZE','IGVFFI9001HIYI','IGVFFI7217ZMJZ']
+          def get(path):
+              url='https://api.data.igvf.org/'+path.lstrip('/')
+              request=urllib.request.Request(url,headers={'Accept':'application/json','User-Agent':'Manuscript-reproduction-input-audit'})
+              try:
+                  with urllib.request.urlopen(request,timeout=35) as r:
+                      data=json.load(r)
+                      return {'url':url,'status_code':r.status,'data':data}
+              except Exception as exc:
+                  return {'url':url,'error':str(exc)}
+          def save(key,record):
+              (OUT/(key+'.json')).write_text(json.dumps(record,indent=2)+'\n')
+              print(key,record.get('status_code'),record.get('error',''))
+          records={}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              for key, record in zip(sets,pool.map(lambda a:get('analysis-sets/'+a+'/?format=json'),sets)):
+                  records[key]=record;save(key,record)
+          files=set(known)
+          for accession in sets:
+              record=get('search/?'+urllib.parse.urlencode({'type':'File','file_set.@id':'/analysis-sets/'+accession+'/','limit':'all','format':'json'}))
+              save(accession+'_files',record)
+              for f in record.get('data',{}).get('@graph',[]):
+                  if f.get('accession'):files.add(f['accession'])
+              data=records[accession].get('data',{})
+              for f in data.get('files',[]):
+                  if isinstance(f,str):files.update(re.findall(r'IGVFFI[A-Z0-9]{8}',f))
+                  elif isinstance(f,dict) and f.get('accession'):files.add(f['accession'])
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              for key, record in zip(sorted(files),pool.map(lambda a:get(a+'/?format=json'),sorted(files))):
+                  save(key,record)
+          code={}
+          for folder in ('notebooks/main','notebooks/supplementary','src','config','docs','scripts','data'):
+              for path in Path(folder).rglob('*'):
+                  if not path.is_file():continue
+                  if path.suffix=='.ipynb':
+                      nb=json.loads(path.read_text())
+                      for c in nb.get('cells',[]):c.pop('outputs',None)
+                      code[str(path)]=nb
+                  elif path.suffix in ('.py','.md','.txt','.yaml','.yml','.json','.tsv','.csv'):
+                      code[str(path)]=path.read_text(errors='replace')
+          (OUT/'current_code.json').write_text(json.dumps(code))
+          (OUT/'audit_context.json').write_text(json.dumps({'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'analysis_sets':sets,'file_records_attempted':sorted(files),'scope':'public metadata only; no credentials; no scientific matrix downloads'},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: igvf-manuscript-input-audit
+          path: /tmp/igvf-input-audit
+          retention-days: 7
