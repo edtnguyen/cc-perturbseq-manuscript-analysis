@@ -349,17 +349,18 @@ def load_or_rebuild_target_counts(model_root, days, output_dir, counts_csv=None,
     output_dir.mkdir(parents=True, exist_ok=True)
     saved = model_root / 'biological_replicate_effects/plots/DIAGNOSTIC_target_cell_counts_by_replicate.csv'
     configs, can_rebuild = [], True
-    for day in days:
-        path = model_root / day / f'{day}_run_config.json'
-        if not _nonempty(path):
-            can_rebuild = False
-            break
-        conf = json.loads(path.read_text())
-        if not all(k in conf and _nonempty(conf[k]) for k in ('h5mu_path', 'usage_path', 'guide_long_csv')):
-            can_rebuild = False
-            break
-        conf['day'] = day
-        configs.append(conf)
+    if counts_csv is None:
+        for day in days:
+            path = model_root / day / f'{day}_run_config.json'
+            if not _nonempty(path):
+                can_rebuild = False
+                break
+            conf = json.loads(path.read_text())
+            if not all(k in conf and _nonempty(conf[k]) for k in ('h5mu_path', 'usage_path', 'guide_long_csv')):
+                can_rebuild = False
+                break
+            conf['day'] = day
+            configs.append(conf)
     if counts_csv is not None or (not can_rebuild and _nonempty(saved)):
         path = Path(counts_csv) if counts_csv is not None else saved
         if not _nonempty(path):

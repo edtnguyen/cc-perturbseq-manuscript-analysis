@@ -29,3 +29,6 @@ pytest==9.2.0
 
 # Original S4 raw-CRT H5MU reader; included so recomputation tests run.
 muon==0.1.7
+
+# Motif-logo rendering used by retained figure notebooks.
+logomaker==0.8.7

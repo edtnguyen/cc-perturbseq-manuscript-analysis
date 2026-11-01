@@ -90,51 +90,9 @@ def _resolve_output_root(paths: dict[str, Any], root: Path) -> None:
 
 
 def load_paths(root: Path) -> tuple[Path, dict[str, Any]]:
-    """Load tracked defaults and merge optional local overrides.
-
-    Resolution order:
-      1. config/paths.example.yaml supplies tracked Sherlock defaults.
-      2. CCPERTURBSEQ_PATHS, when set, supplies an explicit override file.
-      3. otherwise config/paths.local.yaml is used when present.
-      4. when no local file exists, tracked defaults are used directly.
-
-    The returned configuration path identifies the local override when one was
-    used, otherwise the tracked defaults file.
-    """
-    example = root / "config" / "paths.example.yaml"
-    if not example.exists():
-        raise FileNotFoundError(f"Missing tracked path defaults: {example}")
-    defaults = yaml.safe_load(example.read_text(encoding="utf-8")) or {}
-
-    explicit = os.environ.get("CCPERTURBSEQ_PATHS")
-    if explicit:
-        config = Path(explicit).expanduser()
-        if not config.exists():
-            raise FileNotFoundError(
-                "CCPERTURBSEQ_PATHS points to a missing file: "
-                f"{config}"
-            )
-        overrides = yaml.safe_load(config.read_text(encoding="utf-8")) or {}
-        paths = _merge_config(defaults, overrides)
-    else:
-        local = root / "config" / "paths.local.yaml"
-        if local.exists():
-            config = local
-            overrides = yaml.safe_load(local.read_text(encoding="utf-8")) or {}
-            paths = _merge_config(defaults, overrides)
-        else:
-            config = example
-            paths = defaults
-            warnings.warn(
-                "config/paths.local.yaml is absent; using the tracked Sherlock "
-                "defaults in config/paths.example.yaml. Create paths.local.yaml "
-                "only for machine-specific overrides.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-
-    _resolve_output_root(paths, root)
-    return config, paths
+    """Load repository-relative public inputs; ignore legacy institutional defaults."""
+    from .public_data import load_public_paths
+    return load_public_paths(root)
 
 
 def _expand_path_text(value: Any, dotted_key: str) -> str:
@@ -280,6 +238,8 @@ def initialize_figure(
 ) -> dict[str, Any]:
     root = find_repo_root()
     config, paths = load_paths(root)
+    from .public_data import prepare_figure_inputs
+    public_inputs = prepare_figure_inputs(manifest["figure_id"], root, paths)
     output_dir = get_path(paths, "outputs.root") / manifest["figure_id"]
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -319,6 +279,7 @@ def initialize_figure(
     panel_table.attrs["figure_id"] = manifest["figure_id"]
     return {
         "root": root,
+        "public_inputs": public_inputs,
         "config": config,
         "paths": paths,
         "output_dir": output_dir,

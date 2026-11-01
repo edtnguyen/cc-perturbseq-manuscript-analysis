@@ -48,20 +48,13 @@ import numpy as np
 import pandas as pd
 
 
-DEFAULT_PROGRAMDE_ROOT = "/oak/stanford/groups/engreitz/Users/tri/CodeBase/programDE"
-DEFAULT_DATA_DIR = (
-    "/oak/stanford/groups/engreitz/Users/opushkar/cc_perturb/"
-    "2.preprocessing_tonys_pipeline/2.normalized_data/normalized_data"
-)
-DEFAULT_CNMF_DIR = (
-    "/oak/stanford/groups/engreitz/Users/ymo/IGVF_ccperturbseq/Result/"
-    "012726_100k_cells_20iter_allHVG_torch_halsvar_batch_e7/"
-    "012726_100k_cells_20iter_allHVG_torch_halsvar_batch_e7_all"
-)
-DEFAULT_GUIDE_LONG_TEMPLATE = (
-    "/oak/stanford/groups/engreitz/Users/tri/CodeBase/programDE/notebooks/"
-    "{day}_sceptre_transfer/{day}_grna_assignments_long.csv"
-)
+_PUBLIC_ROOT = Path(__file__).resolve().parents[2]
+# Optional raw S4 inputs are the original January model, NOT the March IGVF model.
+# They are not required for reproduction from the bundled numerical results.
+DEFAULT_PROGRAMDE_ROOT = str(_PUBLIC_ROOT / "external/programDE")
+DEFAULT_DATA_DIR = str(_PUBLIC_ROOT / "data/optional_s4_raw/normalized_data")
+DEFAULT_CNMF_DIR = str(_PUBLIC_ROOT / "data/optional_s4_raw/january_cnmf")
+DEFAULT_GUIDE_LONG_TEMPLATE = str(_PUBLIC_ROOT / "data/optional_s4_raw/{day}_grna_assignments_long.csv")
 DEFAULT_DAYS = ["d0", "d1", "d2", "d3"]
 DEFAULT_NTC_LABELS = ["SAFE", "non-targeting", "NTC"]
 

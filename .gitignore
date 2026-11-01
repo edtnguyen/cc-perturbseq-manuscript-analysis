@@ -32,3 +32,16 @@ geo_release/
 # OS/editor files
 .DS_Store
 *.swp
+
+# Downloaded and derived public data (not duplicated in Git)
+data/igvf/
+data/derived/
+data/optional_s4_raw/
+data/optional_s2_raw/
+data/.publication-*/
+data/reproduction.backup-*/
+external/programDE/
+config/paths.public.local.yaml
+
+# This small, versioned motif compendium is part of the companion bundle.
+!data/reproduction/motifs/modisco_compiled.h5

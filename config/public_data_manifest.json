@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "api_origin": "https://api.data.igvf.org",
+  "files": {
+    "IGVFFI7756RKHT": {
+      "accession": "IGVFFI7756RKHT",
+      "md5sum": "0d3fe724ad9eca6cb9e811b71e67b2d7",
+      "file_size": 312724458,
+      "file_format": "h5ad",
+      "filename": "IGVFFI7756RKHT.h5ad",
+      "role": "expression",
+      "day": "d0"
+    },
+    "IGVFFI4783YGLZ": {
+      "accession": "IGVFFI4783YGLZ",
+      "md5sum": "8ffe7570d640a4f72b2de1d6d68e0a01",
+      "file_size": 143568531,
+      "file_format": "h5ad",
+      "filename": "IGVFFI4783YGLZ.h5ad",
+      "role": "expression",
+      "day": "d1"
+    },
+    "IGVFFI5165BSGC": {
+      "accession": "IGVFFI5165BSGC",
+      "md5sum": "f2fe9f4af11a3eda18617ce4b7ec36f6",
+      "file_size": 121143019,
+      "file_format": "h5ad",
+      "filename": "IGVFFI5165BSGC.h5ad",
+      "role": "expression",
+      "day": "d2"
+    },
+    "IGVFFI9086SWZC": {
+      "accession": "IGVFFI9086SWZC",
+      "md5sum": "e8c726fb0e634074384bc8b7cf5a4464",
+      "file_size": 229733444,
+      "file_format": "h5ad",
+      "filename": "IGVFFI9086SWZC.h5ad",
+      "role": "expression",
+      "day": "d3"
+    },
+    "IGVFFI8722NAWN": {
+      "accession": "IGVFFI8722NAWN",
+      "md5sum": "eaa9b998f4a15fee771f2c0236c63c5a",
+      "file_size": 593116718,
+      "file_format": "h5mu",
+      "filename": "IGVFFI8722NAWN.h5mu",
+      "role": "cnmf",
+      "day": "d0"
+    },
+    "IGVFFI6740UUOG": {
+      "accession": "IGVFFI6740UUOG",
+      "md5sum": "cdc55d85a86b62355bbba8dd97669d11",
+      "file_size": 267183838,
+      "file_format": "h5mu",
+      "filename": "IGVFFI6740UUOG.h5mu",
+      "role": "cnmf",
+      "day": "d1"
+    },
+    "IGVFFI7155BENM": {
+      "accession": "IGVFFI7155BENM",
+      "md5sum": "ea85d629fd57646848ba6d31a20cc3b3",
+      "file_size": 235830412,
+      "file_format": "h5mu",
+      "filename": "IGVFFI7155BENM.h5mu",
+      "role": "cnmf",
+      "day": "d2"
+    },
+    "IGVFFI2345GXDF": {
+      "accession": "IGVFFI2345GXDF",
+      "md5sum": "6920d6bdee235a327d955ff038c6ea82",
+      "file_size": 436510560,
+      "file_format": "h5mu",
+      "filename": "IGVFFI2345GXDF.h5mu",
+      "role": "cnmf",
+      "day": "d3"
+    },
+    "IGVFFI9001HIYI": {
+      "accession": "IGVFFI9001HIYI",
+      "md5sum": "f8d6aa0564246df55837da95c4888c60",
+      "file_size": 616932,
+      "file_format": "tsv",
+      "filename": "IGVFFI9001HIYI.tsv.gz",
+      "role": "screen",
+      "day": null
+    },
+    "IGVFFI5157STFU": {
+      "accession": "IGVFFI5157STFU",
+      "md5sum": "0d4a1e607ef5f0da24f7fffa59e0d00c",
+      "file_size": 40170,
+      "file_format": "tsv",
+      "filename": "IGVFFI5157STFU.tsv.gz",
+      "role": "screen",
+      "day": null
+    }
+  },
+  "groups": {
+    "expression": [
+      "IGVFFI7756RKHT",
+      "IGVFFI4783YGLZ",
+      "IGVFFI5165BSGC",
+      "IGVFFI9086SWZC"
+    ],
+    "cnmf": [
+      "IGVFFI8722NAWN",
+      "IGVFFI6740UUOG",
+      "IGVFFI7155BENM",
+      "IGVFFI2345GXDF"
+    ],
+    "screen": [
+      "IGVFFI9001HIYI",
+      "IGVFFI5157STFU"
+    ]
+  },
+  "geo": {
+    "hippo": {
+      "filename": "Hippo_timecourse_integrated.h5mu",
+      "url": null,
+      "sha256": null
+    },
+    "mixed": {
+      "filename": "iPSC_K562_mixed_integrated.h5mu",
+      "url": null,
+      "sha256": null
+    }
+  }
+}
