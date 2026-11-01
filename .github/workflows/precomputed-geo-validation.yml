@@ -11,8 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: 55fe778b1fa4921e68baf2297b1d3f12f0555fd7
           lfs: false
-      - run: git archive --format=tar.gz --output=/tmp/public-code.tar.gz 55fe778b1fa4921e68baf2297b1d3f12f0555fd7 src scripts config tests notebooks README.md .gitignore docs data
+      - run: git archive --format=tar.gz --output=/tmp/public-code.tar.gz HEAD src scripts config tests notebooks README.md .gitignore docs data
       - uses: actions/upload-artifact@v4
         with:
           name: current-public-code
