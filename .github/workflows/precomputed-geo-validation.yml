@@ -2,20 +2,107 @@ name: Precomputed GEO figure validation
 on:
   push:
     branches: [publication/precomputed-geo-figures]
-    paths: [.github/workflows/precomputed-geo-validation.yml]
+    paths: ['.github/workflows/precomputed-geo-validation.yml', '.precomputed/**']
 permissions:
-  contents: read
+  contents: write
 jobs:
-  snapshot:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: src
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      NUMBA_NUM_THREADS: '2'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 55fe778b1fa4921e68baf2297b1d3f12f0555fd7
           lfs: false
-      - run: git archive --format=tar.gz --output=/tmp/public-code.tar.gz HEAD src scripts config tests notebooks README.md .gitignore docs data
-      - uses: actions/upload-artifact@v4
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
         with:
-          name: current-public-code
-          path: /tmp/public-code.tar.gz
-          retention-days: 3
+          python-version: '3.11'
+      - name: Verify and apply source patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, lzma
+          hashes=['84161d43fd662dc8ae59617120a439ed77dc4bbb078971a3374874c2e600c49f','42eea052a5dcc8b92b0867c1ff6d571131fcd62a80334fb45207a10a73eb45c4','2231418a18127e3db7480953c57cfeecb81b7748ee56fb78a9805959adc49b00','4d4890dbee403ba70765c46734ae03342ab0a6c3be857149d099f8d382aaa14b']
+          parts=[]
+          for i,digest in enumerate(hashes,1):
+              text=Path(f'.precomputed/payload.{i}.b64').read_text().strip()
+              assert hashlib.sha256(text.encode()).hexdigest()==digest,f'Part {i} differs'
+              parts.append(text)
+          raw=lzma.decompress(base64.b64decode(''.join(parts)))
+          assert hashlib.sha256(raw).hexdigest()=='083e3d1101c41fb8fa99f2b08a707e4f064db8c7714d798c7cdacf6a79f554e9'
+          Path('/tmp/geo-precomputed-payload.json').write_bytes(raw)
+          Path('/tmp/geo-precomputed-apply.py').write_bytes(Path('.precomputed/apply.py').read_bytes())
+          PY
+          git checkout --detach 55fe778b1fa4921e68baf2297b1d3f12f0555fd7
+          python -m pip install nbformat
+          python /tmp/geo-precomputed-apply.py /tmp/geo-precomputed-payload.json
+      - name: Install the pinned scientific environment
+        run: python -m pip install -r config/geo-reproduction-requirements.txt
+      - name: Run entire public-data regression suite
+        run: |
+          set -o pipefail
+          python -m pytest -q tests --basetemp=/tmp/geo-precomputed-tests 2>&1 | tee /tmp/geo-precomputed-tests.log
+      - name: Validate default portability and report real data readiness
+        run: |
+          python scripts/audit_public_inputs.py | tee /tmp/geo-precomputed-static-audit.json
+          python - <<'PY'
+          import json, subprocess, sys
+          from pathlib import Path
+          result=subprocess.run([sys.executable,'scripts/audit_public_inputs.py','--check-data'],text=True,capture_output=True)
+          Path('/tmp/geo-precomputed-data-readiness.json').write_text(result.stdout)
+          assert result.returncode==1 and json.loads(result.stdout)['status']=='INCOMPLETE_DATA',result.stdout+result.stderr
+          print('Actual study plotting data is not yet bundled: readiness check correctly reports incomplete data.')
+          PY
+      - name: Commit only reviewed changes with outputs preserved
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, subprocess
+          paths=json.loads(Path('/tmp/geo-precomputed-changed-paths.json').read_text())
+          for path in paths:
+              if path.endswith('.ipynb'):
+                  blob=subprocess.check_output(['git','hash-object','-w','--no-filters',path],text=True).strip()
+                  subprocess.run(['git','update-index','--add','--cacheinfo',f'100644,{blob},{path}'],check=True)
+              else:
+                  subprocess.run(['git','add','--',path],check=True)
+          staged=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          assert set(staged)==set(paths),(staged,paths)
+          for item in json.loads(Path('/tmp/geo-precomputed-output-preservation.json').read_text()):
+              nb=json.loads(subprocess.check_output(['git','show',':'+item['path']]))
+              for cell in nb['cells']:cell['source']=None
+              digest=hashlib.sha256(json.dumps(nb,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+              assert digest==item['unchanged_non_source_sha256'],item['path']
+          PY
+          git diff --cached --check
+          git config user.name 'Tri Nguyen'
+          git config user.email '72826864+edtnguyen@users.noreply.github.com'
+          git commit -m 'Use bundled GEO plotting data with optional accession-based regeneration' -m 'Default Hippo and mixed-cell panels to checksum-verified compact plotting tables. Preserve original dot-color/size matrices and frozen lineage/guide/saturation calculations. Add GSE/GSM discovery, atomic public downloads, explicit local-file mode, isolated regeneration caches and comparisons. Extend maintainer collection and audit all seven portable notebooks. Preserve all saved notebook outputs. Study data still requires one-time collection; no synthetic files are published as study results.'
+          git push origin HEAD:refs/heads/publication/precomputed-geo-tested
+          git rev-parse HEAD | tee /tmp/geo-precomputed-candidate.txt
+      - name: Gather validation evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/geo-precomputed-evidence
+          cp /tmp/geo-precomputed-tests.log /tmp/geo-precomputed-static-audit.json /tmp/geo-precomputed-data-readiness.json /tmp/geo-precomputed-output-preservation.json /tmp/geo-precomputed-candidate.txt /tmp/geo-precomputed-evidence/ 2>/dev/null || true
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          root=Path('/tmp/geo-precomputed-tests')
+          for pattern in ('test-execution.log','execution.log'):
+              for p in root.rglob(pattern):
+                  dest=Path('/tmp/geo-precomputed-evidence')/p.relative_to(root)
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(p,dest)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: precomputed-geo-validation
+          path: /tmp/geo-precomputed-evidence
+          retention-days: 7
