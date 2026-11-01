@@ -208,7 +208,8 @@ def load_mixed_plot_data(directory):
     tables, manifest = load_plot_bundle(directory, "ipsc_k562_mix")
     return ParseMixResult(tables["cell_metrics"], tables["cluster_annotation"], tables["saturation"],
         tables["median_diagnostics"], {"plot_bundle": str(Path(directory).resolve()),
-        "processed_sha256": manifest["source"]["sha256"], "lineages": "frozen", "original_source_files_required": False})
+        "source_sha256": manifest["source"]["sha256"],
+        "source_sha256_scope": manifest["source"].get("sha256_scope", "submitted processed file"), "lineages": "frozen", "original_source_files_required": False})
 
 
 def prepare_hippo_dotplots(directory, panel):

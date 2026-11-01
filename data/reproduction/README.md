@@ -11,3 +11,8 @@ checksums the screen/program/motif/S4 companions. Each GEO plotting bundle under
 Their default use requires no original matrix, experiment folder, or GEO login.
 No placeholder scientific tables are distributed. Installing the code alone
 does not populate this directory. See `docs/PUBLIC_DATA.md`.
+
+For compact Hippo/S2 intermediates without creating a new H5MU, run
+`python scripts/export_compact_plot_data.py --apply` on the source machine.
+This publishes only `geo_plots/*/*.tsv.gz` and `manifest.json`, not RNA/guide
+matrices. See `docs/PUBLIC_DATA.md` for the saved-object extraction alternative.

@@ -219,3 +219,80 @@ Additional tests compare original Hippo producers with table-based rendering,
 verify optional GEO/local regeneration, and execute the affected plotting cells
 without institutional paths. Actual accession-specific downloads require the
 public study accession; they cannot be certified before it is available.
+
+## Small intermediate files, without creating an integrated H5MU
+
+Only plotting tables are published for the GEO experiments. The integrated H5MU
+files belong on GEO, not in Git. The default figure notebooks already read
+`data/reproduction/geo_plots/` and accept the same compact tables described here.
+
+Run on the source machine, using the environment that runs the accepted figures:
+
+```bash
+python scripts/export_compact_plot_data.py
+python scripts/export_compact_plot_data.py --apply
+```
+
+The first command is a dry run. By default the exporter runs the unchanged
+Hippo numerical producers on the existing query/projection H5AD pair, and reads
+S2's saved `Figure_S02_all_cell_metrics.csv.gz`, transcript saturation table,
+cluster annotations and median diagnostics. It does not build an H5MU, rerun
+cNMF, recluster S2 cells, or read a rendered figure. Hippo's original numerical
+producers still need the same memory as when generating the accepted panels.
+
+Only the maintainer inventory `config/publication_source_files.json` contains
+source-machine paths. They can be overridden without editing code:
+
+```bash
+python scripts/export_compact_plot_data.py --apply \
+  --hippo-query /path/to/Hippo_timecourse_combined.h5ad \
+  --hippo-projection /path/to/projected.cell_x_program.h5ad \
+  --mixed-figure-dir /path/to/Figure_S02
+```
+
+`--dataset hippo_timecourse` or `--dataset ipsc_k562_mix` exports just one dataset.
+Missing complete cell metrics are not substituted with a filtered panel table.
+Use `--overwrite` only to back up and replace existing plot bundles; unrelated
+data are preserved.
+
+For already-created GEO objects, an alternative reads only small saved HDF5
+annotation/reference-table groups. It does not load count matrices or write any
+intermediate H5AD/H5MU:
+
+```bash
+python scripts/export_compact_plot_data.py --apply \
+  --hippo-h5mu /path/to/Hippo_timecourse_integrated.h5mu \
+  --mixed-h5mu /path/to/iPSC_K562_mixed_integrated.h5mu
+```
+
+This is **saved-table extraction**, not independent verification of the count
+matrices. Its source digest covers the selected plotting tables, not the entire
+H5MU. The existing optional GEO regeneration mode still recomputes the metrics
+and checks embedded matrix/reference data. It remains available in the notebooks.
+
+The outputs are 12 gzip-compressed Hippo tables, four gzip-compressed S2 tables,
+and a `manifest.json` per dataset. Hippo stores summaries and exact dot-color and
+dot-size matrices. S2 retains per-cell values (including zero-guide cells) for
+its violin, box and mixing plots; it does not replace distributions with averages.
+Every table is read back and checked. The exporter prints total bytes and the
+largest table for each dataset. Actual study sizes are measured at export time,
+not estimated from synthetic tests.
+
+The existing full companion collector accepts the same route:
+
+```bash
+python scripts/collect_publication_data.py --compact-geo-inputs --apply
+```
+
+To collect only the two plot bundles with that interface, add `--geo-plots-only`.
+The compact exporter does not stage or push files. Publish only:
+
+```bash
+git add data/reproduction/geo_plots
+git diff --cached --stat
+git commit -m "Add compact Hippo and mixed-cell plotting tables"
+git push origin HEAD:main
+```
+
+Run `python scripts/audit_public_inputs.py --check-data` after the remaining
+companion data are present. No full GEO object is required for default plotting.
