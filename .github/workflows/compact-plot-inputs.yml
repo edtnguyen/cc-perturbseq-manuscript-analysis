@@ -28,6 +28,8 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import base64, hashlib, json, lzma, subprocess, tempfile
+          fix=Path('.compact/fix.py').read_bytes()
+          Path('/tmp/compact-fix.py').write_bytes(fix)
           parts=[]
           expected=['3ac0f798af7976edd8b0b2ac2e594bba8050a580d4a65e899f10a0f6fee1e1d8','8ac2a77fb625774c72ddc11928387df34f778d1dd88ef1606c306e9db00b5b7a']
           for i,h in enumerate(expected,1):
@@ -54,6 +56,7 @@ jobs:
               changed.append(str(p))
           Path('/tmp/compact-changed.json').write_text(json.dumps(changed))
           PY
+          python /tmp/compact-fix.py
       - name: Install pinned scientific dependencies
         run: python -m pip install -r config/geo-reproduction-requirements.txt
       - name: Test both compact routes and all public-data workflows
@@ -84,7 +87,7 @@ jobs:
           git config user.name 'Tri Nguyen'
           git config user.email '72826864+edtnguyen@users.noreply.github.com'
           git commit -m 'Export compact plotting intermediates without building integrated H5MUs' -m 'Add explicit source-file and saved-table routes, preserve original Hippo producers and S2 per-cell metrics, reuse the precomputed notebook schema, report actual export sizes and verify readback. Keep full GEO regeneration available. No study data or notebooks are replaced.'
-          git push origin HEAD:refs/heads/publication/compact-plot-inputs-tested
+          git push origin HEAD:refs/heads/publication/compact-plot-inputs-reviewed
           git rev-parse HEAD > /tmp/compact-candidate.txt
       - name: Gather evidence
         if: always()
