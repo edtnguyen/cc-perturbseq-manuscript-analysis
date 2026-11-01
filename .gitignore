@@ -45,3 +45,7 @@ config/paths.public.local.yaml
 
 # This small, versioned motif compendium is part of the companion bundle.
 !data/reproduction/motifs/modisco_compiled.h5
+
+# Local-only backups of refreshed GEO plotting bundles.
+data/geo_plots.backup-*/
+data/reproduction/.geo-plots-*/

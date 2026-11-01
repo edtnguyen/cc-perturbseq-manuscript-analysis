@@ -66,5 +66,9 @@
   "cnmf_cell_order_source": "/oak/stanford/groups/engreitz/Users/ymo/IGVF_ccperturbseq/Result/030526_100k_cells_100iter_allHVG_torch_halsvar_batch_e7_50/adata/cNMF_50_0_2.h5mu",
   "validation_guide_counts_source": "/oak/stanford/groups/engreitz/Users/chloemc/GenomeWideValidation/MageckAnalysis/mageck_sgRNA_readcount.txt",
   "s4_results_source": "/oak/stanford/groups/engreitz/Users/tri/CodeBase/programDE/notebooks/iPSC_EC_QQ_full_covariates_with_replicate_correlation_bundle/results/ipsc_ec_qq_exports_full_covariates/k_50.dt_0_2",
-  "s4_target_counts_source": null
+  "s4_target_counts_source": null,
+  "geo_plot_sources": {
+    "hippo_timecourse": "/oak/stanford/groups/engreitz/Users/tri/CodeBase/cc-perturbseq-figure-reproduction/geo_release/Hippo_timecourse_integrated.h5mu",
+    "ipsc_k562_mix": "/oak/stanford/groups/engreitz/Users/tri/CodeBase/cc-perturbseq-figure-reproduction/geo_release/iPSC_K562_mixed_integrated.h5mu"
+  }
 }

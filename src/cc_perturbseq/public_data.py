@@ -20,6 +20,15 @@ _WORKBOOK = "data/figure_02/cNMF_50_0_2_032526_6co.xlsx"
 _FIGURES = ("Figure_01", "Figure_02", "Figure_03", "Figure_04", "Figure_S02", "Figure_S04", "Figure_S06")
 _CLIENT = None
 
+COMPANION_KEYS = {
+    "Figure_01": ["screen.genomewide_utest_pos_vs_neg", "validation.compatibility", "cell_order.expression", "cell_order.cnmf", "ccperturbseq.figure1d_program_metadata", "ccperturbseq.figure1d_program_order"],
+    "Figure_02": ["ccperturbseq.cnmf_usage", "ccperturbseq.target_metadata", "cell_order.expression"],
+    "Figure_03": ["ccperturbseq.cnmf_usage", "ccperturbseq.target_metadata", "ccperturbseq.cnmf_spectra", "cell_order.expression", "multiome.enhancer_enrichment_results", "multiome.cluster_motif_map", "multiome.modisco_compiled_h5"],
+    "Figure_04": ["ccperturbseq.cnmf_usage", "ccperturbseq.cnmf_spectra", "cell_order.expression", "multiome.enhancer_enrichment_results", "multiome.cluster_motif_map", "multiome.modisco_compiled_h5"],
+    "Figure_S04": ["s4.*"],
+    "Figure_S06": ["ccperturbseq.cnmf_spectra", "ccperturbseq.program_annotations", "multiome.enhancer_enrichment_results", "multiome.cluster_motif_map", "multiome.modisco_compiled_h5"],
+}
+
 
 def configure_igvf(*, allow_prompt=True):
     """Configure optional getpass authentication. Never returns credentials."""
@@ -260,7 +269,7 @@ def require_geo(path, dataset):
         raise FileNotFoundError(
             f"Missing processed GEO object for {dataset}: {path}. "
             "Place the submitted H5MU at this portable path (or configure geo.* in CCPERTURBSEQ_PUBLIC_PATHS). "
-            "The GEO download accession/URL has not yet been configured. No source-data fallback is used."
+            "Use precomputed plotting tables or explicitly select geo mode with a public accession. No source-data fallback is used."
         )
     _check_lfs(path)
     return path
@@ -302,20 +311,12 @@ def load_mixed_geo(path):
         {"processed_file": str(path), "sha256": digest_file(path, "sha256"), "lineages": "frozen in submitted object", "original_source_files_required": False})
 
 
-def prepare_figure_inputs(figure_id, root, paths):
+def prepare_figure_inputs(figure_id, root, paths, *, geo_options=None):
     """Materialize only the inputs for the requested retained figure."""
     if figure_id not in _FIGURES:
         raise ValueError(f"No public input specification for {figure_id}")
     root = Path(root).resolve()
-    needs = {
-        "Figure_01": ["screen.genomewide_utest_pos_vs_neg", "validation.compatibility", "cell_order.expression", "cell_order.cnmf", "ccperturbseq.figure1d_program_metadata", "ccperturbseq.figure1d_program_order"],
-        "Figure_02": ["ccperturbseq.cnmf_usage", "ccperturbseq.target_metadata", "cell_order.expression"],
-        "Figure_03": ["ccperturbseq.cnmf_usage", "ccperturbseq.target_metadata", "ccperturbseq.cnmf_spectra", "cell_order.expression", "multiome.enhancer_enrichment_results", "multiome.cluster_motif_map", "multiome.modisco_compiled_h5"],
-        "Figure_04": ["ccperturbseq.cnmf_usage", "ccperturbseq.cnmf_spectra", "cell_order.expression", "multiome.enhancer_enrichment_results", "multiome.cluster_motif_map", "multiome.modisco_compiled_h5"],
-        "Figure_S04": ["s4.*"],
-        "Figure_S06": ["ccperturbseq.cnmf_spectra", "ccperturbseq.program_annotations", "multiome.enhancer_enrichment_results", "multiome.cluster_motif_map", "multiome.modisco_compiled_h5"],
-    }
-    bundled = require_bundle(root, paths, needs[figure_id]) if figure_id in needs else {}
+    bundled = require_bundle(root, paths, COMPANION_KEYS[figure_id]) if figure_id in COMPANION_KEYS else {}
     # Companion overrides may not bypass verification of the actual input.
     for key, verified in bundled.items():
         if key.startswith(("screen.", "ccperturbseq.", "multiome.")):
@@ -325,15 +326,14 @@ def prepare_figure_inputs(figure_id, root, paths):
         if not _nonempty(root / _WORKBOOK):
             raise FileNotFoundError(f"Missing repository workbook: {root / _WORKBOOK}")
         _check_lfs(root / _WORKBOOK)
-    # Fail early for an unpublished GEO object, before downloading larger IGVF
-    # matrices. The user can supply these same H5MU files on any machine.
-    if figure_id in {"Figure_03", "Figure_04"}:
-        require_geo(value(paths, "geo.hippo_h5mu"), "Hippo time course")
-    if figure_id == "Figure_S02":
-        require_geo(value(paths, "geo.mixed_h5mu"), "mixed hiPSC–K562")
+    geo_plotting = None
+    if figure_id in {"Figure_03", "Figure_04", "Figure_S02"}:
+        from .geo_plot_data import prepare_geo_plot_inputs
+        dataset = "ipsc_k562_mix" if figure_id == "Figure_S02" else "hippo_timecourse"
+        geo_plotting = prepare_geo_plot_inputs(dataset, root, paths, **(geo_options or {}))
     manifest = _manifest(root)
-    client = _CLIENT or IgvfClient(allow_prompt=True)
     def fetch_group(name):
+        client = _CLIENT or IgvfClient(allow_prompt=True)
         return [client.download(manifest["files"][acc], value(paths, "public_data.igvf_cache")) for acc in manifest["groups"][name]]
     if figure_id in {"Figure_01", "Figure_02", "Figure_03", "Figure_04"}:
         files = fetch_group("expression")
@@ -344,6 +344,5 @@ def prepare_figure_inputs(figure_id, root, paths):
         mageck, validation = fetch_group("screen")
         paths["screen"]["genomewide_mageck_pos_vs_neg"] = str(mageck)
         adapt_validation_counts(validation, bundled["validation.compatibility"], value(paths, "screen.validation_guide_counts"))
-    if figure_id in {"Figure_03", "Figure_04"}:
-        extract_hippo_geo(value(paths, "geo.hippo_h5mu"), value(paths, "hippo_timecourse.query_h5ad"), value(paths, "hippo_timecourse.reprojected_cnmf_h5ad"))
-    return {"figure": figure_id, "backend": "IGVF plus repository companions and processed GEO objects", "institutional_source_files_required": False}
+    return {"figure": figure_id, "backend": "IGVF and published plotting companions",
+            "geo_plotting": geo_plotting, "institutional_source_files_required": False}

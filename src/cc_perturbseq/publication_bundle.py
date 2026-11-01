@@ -118,10 +118,71 @@ def _beta_sources(model_root):
     return table, results
 
 
-def collect(root, source_config, *, apply=False, overwrite=False, s4_results=None, target_counts=None):
+
+def _geo_sources(config, *, hippo_h5mu=None, mixed_h5mu=None):
+    configured = config.get("geo_plot_sources", {})
+    sources = {
+        "hippo_timecourse": hippo_h5mu or configured.get("hippo_timecourse"),
+        "ipsc_k562_mix": mixed_h5mu or configured.get("ipsc_k562_mix"),
+    }
+    missing = []
+    for dataset, source in sources.items():
+        path = Path(source).expanduser().resolve() if source else None
+        if path is None or not _valid(path):
+            missing.append(f"{dataset}: {path or 'not configured'}")
+        else:
+            sources[dataset] = path
+    if missing:
+        raise FileNotFoundError("Submitted objects needed to prepare plotting tables:\n  " + "\n  ".join(missing)
+            + "\nUse --hippo-h5mu and --mixed-h5mu to select the exact submitted integrated files. "
+            "The original Split-pipe experiment directories are not needed.")
+    return sources
+
+
+def _build_geo_plots(sources, parent):
+    from .geo_plot_data import build_plot_bundle
+    reports = {}
+    for dataset, source in sources.items():
+        print(f"Generating {dataset} plotting inputs from {source.name}", flush=True)
+        manifest = build_plot_bundle(source, Path(parent) / dataset, dataset)
+        reports[dataset] = {"source_sha256": manifest["source"]["sha256"],
+                            "n_tables": len(manifest["tables"])}
+    return reports
+
+
+def collect_geo_plots_only(root, source_config, *, hippo_h5mu=None, mixed_h5mu=None, apply=False, overwrite=False):
+    """Add/update just the two independent plot bundles, preserving other data."""
+    root = Path(root).expanduser().resolve()
+    config = json.loads(Path(source_config).read_text())
+    sources = _geo_sources(config, hippo_h5mu=hippo_h5mu, mixed_h5mu=mixed_h5mu)
+    for dataset, source in sources.items():
+        print(f"FOUND {dataset} submitted object: {source}")
+    if not apply:
+        return {"status": "dry_run", "datasets": list(sources), "raw_objects_uploaded": False}
+    destination = root / "data/reproduction/geo_plots"
+    if destination.exists() and not overwrite:
+        raise FileExistsError("geo_plots already exists. Use --overwrite to back it up and replace it.")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix=".geo-plots-", dir=destination.parent))
+    try:
+        reports = _build_geo_plots(sources, staging)
+        if destination.exists():
+            backup = root / "data" / ("geo_plots.backup-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
+            destination.rename(backup)
+            print("Previous plot bundles retained:", backup)
+        staging.rename(destination)
+        print("Plotting data saved to", destination, "; no Git changes were staged or pushed.")
+        return {"status": "collected", "datasets": reports, "raw_objects_uploaded": False}
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging)
+
+
+def collect(root, source_config, *, apply=False, overwrite=False, s4_results=None, target_counts=None, hippo_h5mu=None, mixed_h5mu=None):
     import pandas as pd
     root = Path(root).expanduser().resolve()
     config = json.loads(Path(source_config).read_text())
+    geo_sources = _geo_sources(config, hippo_h5mu=hippo_h5mu, mixed_h5mu=mixed_h5mu)
     model_root = Path(s4_results or config["s4_results_source"]).expanduser().resolve()
     target_counts = target_counts or config.get("s4_target_counts_source")
     sources = [(row["key"], Path(row["source"]).expanduser()) for row in config["files"]]
@@ -148,7 +209,7 @@ def collect(root, source_config, *, apply=False, overwrite=False, s4_results=Non
         raise FileNotFoundError("Collection preflight found missing inputs:\n  " + "\n  ".join(problems))
     table, beta_sources = _beta_sources(model_root)
     if not apply:
-        print(f"Dry run: {len(config['files'])} exact companion files, two cell-order tables, validation adapter, and S4 numerical data would be collected. Use --apply to copy. GEO files and raw CRT inputs are not copied.")
+        print(f"Dry run: {len(config['files'])} exact companion files, two cell-order tables, validation adapter, and S4 numerical data would be collected. Use --apply to copy. Both GEO plotting bundles will be regenerated; integrated H5MU objects and raw CRT inputs are not copied.")
         return {"status": "dry_run", "s4_model": str(model_root)}
     destination = root / "data/reproduction"
     if destination.exists() and any(p.name != "README.md" for p in destination.iterdir()) and not overwrite:
@@ -229,8 +290,13 @@ def collect(root, source_config, *, apply=False, overwrite=False, s4_results=Non
             extra.unlink()
         for extra in counts_out.parent.glob("DIAGNOSTIC_replicate_cnmf_usage_overlap.csv"):
             extra.unlink()
+        # The two plotting bundles have their own manifests/checksums, so they
+        # can subsequently be refreshed with --geo-plots-only without invalidating
+        # the independent core companion manifest.
+        geo_reports = _build_geo_plots(geo_sources, staging / "geo_plots")
         result = {"schema_version": 1, "created_utc": datetime.now(timezone.utc).isoformat(),
             "files": files, "geo_datasets_included": False,
+            "geo_plot_bundles": geo_reports,
             "cnmf_tsv_policy": "Exact original representations retained; no unverified substitution from H5MU loadings or usage.",
             "s4_policy": "Completed numerical results; >=20 target cells and pooled q<=0.10 selection unchanged; no raw CRT run."}
         (staging / "bundle_manifest.json").write_text(json.dumps(result, indent=2) + "\n")
@@ -254,9 +320,16 @@ def main(argv=None):
     parser.add_argument("--target-counts", type=Path, help="Same-model numerical target-cell support table")
     parser.add_argument("--apply", action="store_true", help="Copy and verify data; otherwise perform a dry run")
     parser.add_argument("--overwrite", action="store_true", help="Back up and replace an existing collected bundle")
+    parser.add_argument("--hippo-h5mu", type=Path, help="Exact submitted Hippo integrated H5MU")
+    parser.add_argument("--mixed-h5mu", type=Path, help="Exact submitted hiPSC-K562 integrated H5MU")
+    parser.add_argument("--geo-plots-only", action="store_true", help="Collect only the two precomputed plotting bundles, leaving other companion data unchanged")
     args = parser.parse_args(argv)
-    collect(args.repo, args.source_config or args.repo / "config/publication_source_files.json", apply=args.apply,
-            overwrite=args.overwrite, s4_results=args.s4_results, target_counts=args.target_counts)
+    if args.geo_plots_only:
+        return collect_geo_plots_only(args.repo, args.source_config or args.repo / "config/publication_source_files.json",
+            hippo_h5mu=args.hippo_h5mu, mixed_h5mu=args.mixed_h5mu, apply=args.apply, overwrite=args.overwrite)
+    return collect(args.repo, args.source_config or args.repo / "config/publication_source_files.json", apply=args.apply,
+            overwrite=args.overwrite, s4_results=args.s4_results, target_counts=args.target_counts,
+            hippo_h5mu=args.hippo_h5mu, mixed_h5mu=args.mixed_h5mu)
 
 
 if __name__ == "__main__":

@@ -63,3 +63,17 @@ See [Public data and collection instructions](docs/PUBLIC_DATA.md) for the
 maintainer collection command, authentication, dataset accession manifest,
 S4 model-version constraints, and validation scope. Existing scientific
 calculations, plotting styles, and saved notebook figures are retained.
+
+## Hippo and mixed-cell plotting data
+
+Figures 3f, 4c and S2 default to the checksummed tables under
+`data/reproduction/geo_plots/`. No GEO download or original single-cell file is
+needed for this route. Set `DATA_SOURCE="geo"` and `GEO_ACCESSION` in the notebook
+to regenerate those tables from the submitted integrated H5MU; use `local_file`
+mode before GEO release. Regenerated data are kept separately in `data/derived/`.
+
+Maintainers can run `python scripts/collect_publication_data.py --geo-plots-only --apply`
+to generate just these two plotting bundles, then commit and push them. This does
+not upload the H5MU files. See `docs/PUBLIC_DATA.md` for input-path options and
+publication instructions. The actual data are not present until that collection
+step has been run and its outputs published.

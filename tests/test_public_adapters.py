@@ -146,6 +146,10 @@ def test_collection_is_lossless_relative_and_does_not_run_crt(tmp_path,monkeypat
                      {'key':'test.motif','source':str(motif),'destination':'data/reproduction/motifs/modisco_compiled.h5','gzip':False}],
             'integrated_cell_order_source':str(expression),'cnmf_cell_order_source':str(cnmf),
             'validation_guide_counts_source':str(original_path),'s4_results_source':str(model)}
+    from geo_plot_fixtures import make_hippo_geo
+    hippo=source/'hippo.h5mu';make_hippo_geo(hippo)
+    mixed=source/'mixed.h5mu';make_mixed_geo(mixed)
+    config['geo_plot_sources']={'hippo_timecourse':str(hippo),'ipsc_k562_mix':str(mixed)}
     cp=root/'config/sources.json';cp.write_text(json.dumps(config))
     (root/'config/public_data_manifest.json').write_text(json.dumps({'files':{'IGVFFI5157STFU':{}}}))
     class Client:

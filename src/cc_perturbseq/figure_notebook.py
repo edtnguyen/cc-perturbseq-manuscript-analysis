@@ -235,11 +235,12 @@ def initialize_figure(
     manifest: dict[str, Any],
     *,
     require_inputs: bool = True,
+    geo_options: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     root = find_repo_root()
     config, paths = load_paths(root)
     from .public_data import prepare_figure_inputs
-    public_inputs = prepare_figure_inputs(manifest["figure_id"], root, paths)
+    public_inputs = prepare_figure_inputs(manifest["figure_id"], root, paths, geo_options=geo_options)
     output_dir = get_path(paths, "outputs.root") / manifest["figure_id"]
     output_dir.mkdir(parents=True, exist_ok=True)
 

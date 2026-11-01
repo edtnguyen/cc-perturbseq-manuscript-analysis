@@ -51,24 +51,28 @@ def static_audit(root=ROOT):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check-data", action="store_true", help="Check companion checksums and GEO presence without downloading")
+    parser.add_argument("--check-data", action="store_true", help="Check companions and precomputed plot tables without requiring GEO matrices")
     args = parser.parse_args()
     result = static_audit()
     if args.check_data:
-        from cc_perturbseq.public_data import load_public_paths, require_bundle, require_geo, value
+        from cc_perturbseq.public_data import load_public_paths, require_bundle, value, COMPANION_KEYS
+        from cc_perturbseq.geo_plot_data import load_plot_bundle
         _, paths = load_public_paths(ROOT)
         readiness = {}
         manifest = value(paths, "public_data.bundle_manifest")
         try:
             keys = [record["key"] for record in json.loads(manifest.read_text())["files"]]
             require_bundle(ROOT, paths, keys)
+            required = sorted({k for values in COMPANION_KEYS.values() for k in values if k != "s4.*"})
+            require_bundle(ROOT, paths, required)
+            require_bundle(ROOT, paths, ["s4.*"])
             readiness["companions"] = f"PASS: {len(keys)} checksummed files"
         except Exception as exc:
             readiness["companions"] = f"MISSING_OR_INVALID: {exc}"
-        for dataset, key in (("Hippo", "geo.hippo_h5mu"), ("mixed_cells", "geo.mixed_h5mu")):
+        for dataset, key in (("hippo_timecourse", "precomputed.hippo"), ("ipsc_k562_mix", "precomputed.mixed")):
             try:
-                require_geo(value(paths, key), dataset)
-                readiness[dataset] = "PRESENT: processed H5MU; schema checked when read"
+                load_plot_bundle(value(paths, key), dataset, tables=False)
+                readiness[dataset] = "PASS: checksummed plotting tables; GEO matrix is optional"
             except Exception as exc:
                 readiness[dataset] = f"MISSING_OR_INVALID: {exc}"
         result["data_readiness"] = readiness

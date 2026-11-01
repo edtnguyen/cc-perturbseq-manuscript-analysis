@@ -4,6 +4,7 @@ outputs:
   root: results
 public_data:
   igvf_cache: data/igvf
+  geo_cache: data/geo/downloads
   derived_cache: data/derived
   bundle_manifest: data/reproduction/bundle_manifest.json
 screen:
@@ -32,3 +33,7 @@ geo:
 hippo_timecourse:
   query_h5ad: data/derived/hippo/rna.h5ad
   reprojected_cnmf_h5ad: data/derived/hippo/cnmf.h5ad
+
+precomputed:
+  hippo: data/reproduction/geo_plots/hippo_timecourse
+  mixed: data/reproduction/geo_plots/ipsc_k562_mix

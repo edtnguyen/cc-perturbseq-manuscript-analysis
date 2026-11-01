@@ -1,7 +1,8 @@
 # Public inputs for manuscript figure reproduction
 
 The seven figure notebooks use IGVF deposits, versioned companion data under
-`data/reproduction/`, and the two integrated GEO H5MU files under `data/geo/`.
+`data/reproduction/`, including precomputed plotting data for the two GEO experiments.
+The integrated GEO H5MU files are optional inputs for regenerating those tables.
 They do not read original institutional filesystem locations or old notebooks.
 Previously saved notebook outputs are retained; those outputs may contain paths
 from the recorded execution. They are not inputs to a new run.
@@ -61,7 +62,8 @@ inventory with `--source-config`. Select a completed S4 result directory using
 The collector includes the genome-wide U-test table; the validation guide-name
 and QC bridge; cNMF usage/spectra; program annotations and display metadata;
 original expression/cNMF cell order; exact guide metadata; the three selected
-motif files; and the complete S4 plotting inputs. It excludes FASTQs, expression
+motif files; the complete S4 plotting inputs; and precomputed Hippo/mixed-cell plotting tables
+generated from the two submitted integrated H5MUs. It excludes FASTQs, expression
 matrices already deposited to IGVF, old notebooks, generated figure files and
 unrelated analyses. It does not rerun CRT. If S4 target-cell counts need rebuilding,
 it uses the original recorded inputs on the source machine once, then bundles
@@ -77,7 +79,10 @@ No files are staged to Git automatically. A 95 MiB per-file guard prevents an
 accidental oversized Git publication. `--overwrite` backs up an existing bundle.
 The script emits `data/reproduction/bundle_manifest.json` only after all required
 inputs are collected successfully. Publish the entire `data/reproduction/`
-directory, including that manifest. Its contents have **not** been published
+directory, including that manifest and the independently checksummed
+`geo_plots/hippo_timecourse/` and `geo_plots/ipsc_k562_mix/` bundles. Their
+matrices/metrics are regenerated with the existing numerical producers, not
+from figure images. Its contents have **not** been published
 merely by installing this code.
 
 ## S4
@@ -95,26 +100,102 @@ original January-model inputs and an explicit programDE installation. These
 inputs are not deposited in the supplied March IGVF sets. The figure notebook
 therefore does not silently swap models or attempt raw recomputation.
 
-## GEO datasets
+## GEO experiments: precomputed by default
 
-The processed-object reader is portable, but the public GEO accessions/download
-URLs have not been supplied. For now place the submitted files at:
+Figures 3f, 4c and S2i/j/l/m/n default to `DATA_SOURCE="precomputed"`.
+They read the following versioned directories, with no GEO download or processed
+single-cell object required:
 
 ```text
-data/geo/Hippo_timecourse_integrated.h5mu
-data/geo/iPSC_K562_mixed_integrated.h5mu
+data/reproduction/geo_plots/hippo_timecourse/
+data/reproduction/geo_plots/ipsc_k562_mix/
 ```
 
-They are **not copied or uploaded** by the IGVF companion collector. The Hippo
-RNA and cNMF modalities are extracted into `data/derived/hippo/` without refitting.
-S2 uses frozen lineage labels and recomputes guide metrics from its sparse guide
-modality; it does not recluster or read Split-pipe source files. Both require the
-`ccperturbseq.geo.v1` schema produced by the submission workflow.
+The Hippo bundle includes 12 compressed tables: gene/program summaries and the
+actual dot-color and dot-size matrices for each of Figure 3f and Figure 4c. The
+Scanpy renderer receives these matrices directly; it does not re-normalize the
+already scaled gene colors. The mixed-cell bundle includes all QC-passing cells'
+metrics and frozen lineage labels, all four saturation curves, cluster annotations,
+and median diagnostics. Zero-guide cells are retained. No old notebook or rendered
+figure is used as an input.
 
-Missing GEO files produce an explicit missing-input error, never a fallback to
-Sherlock. Having portable code is not the same as having all public data
-published: the companion bundle and these two H5MU files must be materialized
-before all seven notebooks can run.
+### Prepare the precomputed tables for publication
+
+The normal collector includes both bundles. It reads the exact integrated H5MU
+files created for GEO, with defaults recorded only in the maintainer source inventory.
+The processed objects themselves are not copied into Git. To specify their locations:
+
+```bash
+python scripts/collect_publication_data.py --apply --hippo-h5mu /path/to/Hippo_timecourse_integrated.h5mu --mixed-h5mu /path/to/iPSC_K562_mixed_integrated.h5mu
+```
+
+To add only these two bundles without recopying the other companion data:
+
+```bash
+python scripts/collect_publication_data.py --geo-plots-only
+python scripts/collect_publication_data.py --geo-plots-only --apply
+```
+
+The first command is a dry run. Use the two path options above when the submitted
+files are in another location. Use `--overwrite` to back up existing plot bundles
+before replacing them. Copying/regeneration is not a Git push; after validation,
+commit and push `data/reproduction/geo_plots/` with its two `manifest.json` files.
+No integrated H5MU or raw sequencing file is uploaded by this command.
+
+### Optional regeneration from GEO
+
+In the relevant notebook settings:
+
+```python
+DATA_SOURCE = "geo"
+GEO_ACCESSION = "GSE123456"  # Replace with this experiment's public GSE or GSM
+GEO_FILENAME = None         # Or the exact processed supplementary filename
+GEO_EXPECTED_SHA256 = None  # Optional SHA-256 of the decompressed H5MU
+GEO_LOCAL_FILE = None
+```
+
+The example accession above is illustrative, not an accession assigned to this
+study. Public study accessions have not yet been supplied in this repository.
+The resolver reads NCBI SOFT metadata, selects the integrated processed file,
+and downloads it over HTTPS. Series- and sample-level attachments are supported.
+Ambiguous matches require an explicit filename. A `.h5mu.gz` is decompressed
+before use. Raw TAR/FASTQ downloads are not substituted for processed data.
+Released GEO records require no authentication. Private/unreleased records give
+an actionable error; no NCBI password or reviewer token is requested or stored.
+
+Before release or when an integrated file was obtained separately:
+
+```python
+DATA_SOURCE = "local_file"
+GEO_LOCAL_FILE = "data/geo/Hippo_timecourse_integrated.h5mu"
+GEO_ACCESSION = ""
+```
+
+For S2 use `data/geo/iPSC_K562_mixed_integrated.h5mu` instead. Relative paths resolve
+from the repository root. This study's `ccperturbseq.geo.v1` integrated H5MU schema
+is required. An arbitrary RNA-only H5AD cannot replace the cNMF/guide modalities,
+frozen labels, or sequencing-saturation tables; unsupported objects are rejected.
+
+Regeneration recalculates panel inputs from the submitted modalities and verifies
+embedded matrix checksums and reference tables when present. Hippo uses the
+unchanged condition-specific QC, s8 exclusion, panel-specific RNA normalization,
+and fixed-reference CLR values. S2 recomputes sparse guide metrics without
+reclustering. Regenerated tables go to a content-addressed directory under
+`data/derived/geo_plots/`; published tables are never overwritten by notebook
+execution. `comparison_to_published.json` records whether all tables agree when
+a reference bundle is present. Differences are reported, not silently ignored.
+The plots in that run use the regenerated tables.
+
+A command-line equivalent is available:
+
+```bash
+python scripts/prepare_geo_plot_data.py --dataset hippo_timecourse --geo-accession GSE123456
+python scripts/prepare_geo_plot_data.py --dataset ipsc_k562_mix --local-file data/geo/iPSC_K562_mixed_integrated.h5mu
+```
+
+NCBI interface documentation:
+https://www.ncbi.nlm.nih.gov/geo/info/download.html
+https://www.ncbi.nlm.nih.gov/geo/info/geo_paccess.html
 
 ## Checks and execution
 
@@ -125,12 +206,16 @@ python scripts/prepare_public_data.py --figure Figure_01 --no-prompt
 ```
 
 The static audit checks all seven notebook sources and default-path providers.
-`--check-data` reports missing companion/GEO files honestly; it does not generate
+`--check-data` verifies companion and precomputed plotting bundles; it does not
+require the optional GEO H5MUs and reports missing/invalid plotting tables honestly; it does not generate
 placeholder data. The preparation command downloads and assembles actual IGVF
 inputs. Every notebook performs the same preparation in its setup cell.
 
 The tests use checksum validation, synthetic day partitions, the real table
 adapter and original plotting functions. They also execute the supplementary
 notebooks in a fresh process with access to institutional paths blocked. They
-are portability tests, not a numerical validation of the unpublished study
-companion files.
+are portability tests, not a run on the unpublished study companion files.
+Additional tests compare original Hippo producers with table-based rendering,
+verify optional GEO/local regeneration, and execute the affected plotting cells
+without institutional paths. Actual accession-specific downloads require the
+public study accession; they cannot be certified before it is available.

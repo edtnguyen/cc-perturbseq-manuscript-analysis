@@ -133,10 +133,14 @@ def test_s6_full_notebook_with_bundled_motifs(tmp_path):
     assert len(list(tables.glob('*_motif_enrichment_matrix.csv')))==4
 
 
-def test_s2_full_notebook_reads_only_geo_integrated_file(tmp_path):
+def test_s2_full_notebook_reads_only_precomputed_plotting_tables(tmp_path):
     pytest.importorskip('anndata');pytest.importorskip('mudata')
     from test_public_adapters import make_mixed_geo
-    root=isolated(tmp_path);make_mixed_geo(root/'data/geo/iPSC_K562_mixed_integrated.h5mu')
+    root=isolated(tmp_path)
+    from cc_perturbseq.geo_plot_data import build_plot_bundle
+    source=root/'data/geo/iPSC_K562_mixed_integrated.h5mu';make_mixed_geo(source)
+    build_plot_bundle(source,root/'data/reproduction/geo_plots/ipsc_k562_mix','ipsc_k562_mix')
+    shutil.rmtree(root/'data/geo')
     run_notebook(root,'notebooks/supplementary/Figure_S02.ipynb')
     for panel in ('i','j','l','m','n'):
         assert list((root/f'results/Figure_S02/panel_{panel}').glob('*.svg'))
@@ -185,9 +189,13 @@ def test_all_seven_input_preparations_with_no_institutional_inputs(tmp_path,monk
     _,original,portal=validation_tables(fixtures);bridge=validation_bridge(original,portal)
     p=root/'data/reproduction/screen/validation_guide_compatibility.tsv';bridge.to_csv(p,sep='\t',index=False);records['validation.compatibility']=p
     bundle_manifest(root,records)
-    hippo=md.MuData({'rna':ad.AnnData(np.ones((2,3))),'cnmf':ad.AnnData(np.ones((2,50)))})
-    hippo.uns.update(geo_schema=SCHEMA,dataset='hippo_timecourse');geo=root/'data/geo';geo.mkdir(exist_ok=True)
-    hippo.write_h5mu(geo/'Hippo_timecourse_integrated.h5mu');make_mixed_geo(geo/'iPSC_K562_mixed_integrated.h5mu')
+    from geo_plot_fixtures import make_hippo_geo
+    from cc_perturbseq.geo_plot_data import build_plot_bundle
+    hippo=root/'geo_source/hippo.h5mu';make_hippo_geo(hippo)
+    mixed=root/'geo_source/mixed.h5mu';make_mixed_geo(mixed)
+    for dataset,source in [('hippo_timecourse',hippo),('ipsc_k562_mix',mixed)]:
+        build_plot_bundle(source,root/'data/reproduction/geo_plots'/dataset,dataset)
+    shutil.rmtree(root/'geo_source')
     manifest=json.loads((root/'config/public_data_manifest.json').read_text())
     downloaded={**dict(zip(manifest['groups']['expression'],day_paths)),**dict(zip(manifest['groups']['cnmf'],cnmf_paths)),
                 'IGVFFI5157STFU':portal,'IGVFFI9001HIYI':portal}
