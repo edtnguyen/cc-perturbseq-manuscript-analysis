@@ -1,0 +1,122 @@
+name: Validate portable manuscript data inputs
+on:
+  push:
+    branches: [publication/portable-data-inputs]
+    paths: ['.publication/**', '.github/workflows/public-inputs-validation.yml']
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: src
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      NUMBA_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify payload and apply to published baseline
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, lzma
+          expected=['449fbe2cf55b148bed09d356741ec74e4c77374311e8dea2ea3f95fb2bdae9ee','15cdffbacad7795fa33ace00aefdc7d1b2bc9053417a66977e52c0f2d5217280','225f61785649ec23a063f3671e18fafecb3bbc60e3021192aafee16272adf7cc']
+          parts=[]
+          for i,digest in enumerate(expected,1):
+              raw=Path(f'.publication/payload.{i}.b64').read_text().strip()
+              assert hashlib.sha256(raw.encode()).hexdigest()==digest, f'Payload part {i} differs'
+              parts.append(raw)
+          data=lzma.decompress(base64.b64decode(''.join(parts)))
+          assert hashlib.sha256(data).hexdigest()=='523467252d926d2d4f77ae7eb4e1d73368099cde132e3835e24034e9528b0052'
+          Path('/tmp/public-payload.json').write_bytes(data)
+          Path('/tmp/apply-public-data.py').write_bytes(Path('.publication/apply.py').read_bytes())
+          PY
+          git checkout --detach ebdc6a74fc7ed5296c671e249aa78eda5772f4d4
+          python -m pip install nbformat
+          python /tmp/apply-public-data.py /tmp/public-payload.json
+      - name: Install pinned scientific environment
+        run: |
+          python -m pip install -r config/geo-reproduction-requirements.txt
+          python -c 'import anndata, mudata, muon, scanpy, logomaker, plotnine; print("All public input and plotting dependencies available")'
+      - name: Test adapters and full supplementary notebook execution
+        run: |
+          set -o pipefail
+          python -m pytest -q tests/test_public_downloads.py tests/test_public_adapters.py tests/test_public_notebooks.py --basetemp=/tmp/public-input-tests 2>&1 | tee /tmp/public-tests.log
+      - name: Check actual public IGVF downloads and data readiness
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, os, subprocess, sys
+          from cc_perturbseq.igvf_download import IgvfClient, digest_file
+          for key in ('IGVF_ACCESS_KEY','IGVF_SECRET_ACCESS_KEY'):
+              os.environ.pop(key,None)
+          client=IgvfClient(allow_prompt=False)
+          manifest=json.loads(Path('config/public_data_manifest.json').read_text())
+          report=[]
+          for accession in ['IGVFFI9001HIYI','IGVFFI5157STFU']:
+              record=manifest['files'][accession]
+              path=client.download(record,Path('/tmp/igvf-live-smoke'))
+              report.append({'accession':accession,'size_bytes':path.stat().st_size,'md5sum':digest_file(path),'anonymous_download':True,'checksum_verified':True})
+          Path('/tmp/public-live-downloads.json').write_text(json.dumps(report,indent=2))
+          print(json.dumps(report,indent=2))
+          static=subprocess.run([sys.executable,'scripts/audit_public_inputs.py'],capture_output=True,text=True)
+          Path('/tmp/public-static-audit.json').write_text(static.stdout)
+          assert static.returncode==0,static.stdout+static.stderr
+          readiness=subprocess.run([sys.executable,'scripts/audit_public_inputs.py','--check-data'],capture_output=True,text=True)
+          Path('/tmp/public-data-readiness.json').write_text(readiness.stdout)
+          assert readiness.returncode==1 and json.loads(readiness.stdout)['status']=='INCOMPLETE_DATA',readiness.stdout
+          PY
+      - name: Verify outputs preserved and publish tested candidate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, subprocess
+          expected=json.loads(Path('/tmp/public-changed-paths.json').read_text())
+          for path in expected:
+              if path.endswith('.ipynb'):
+                  blob=subprocess.check_output(['git','hash-object','-w','--no-filters',path],text=True).strip()
+                  subprocess.run(['git','update-index','--add','--cacheinfo',f'100644,{blob},{path}'],check=True)
+              else:
+                  subprocess.run(['git','add','--',path],check=True)
+          staged=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          assert set(staged)==set(expected),(staged,expected)
+          for item in json.loads(Path('/tmp/public-output-preservation.json').read_text()):
+              nb=json.loads(subprocess.check_output(['git','show',':'+item['path']]))
+              for cell in nb['cells']:cell['source']=None
+              digest=hashlib.sha256(json.dumps(nb,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+              assert digest==item['unchanged_non_source_sha256'],item['path']
+          PY
+          git diff --cached --check
+          git config user.name 'Tri Nguyen'
+          git config user.email '72826864+edtnguyen@users.noreply.github.com'
+          git commit -m 'Use portable IGVF, companion and GEO inputs for manuscript figures' -m 'Add checksum-pinned anonymous IGVF downloads with optional protected access-key prompts; assemble deposited day partitions in exact cell order; collect and verify non-deposited scientific inputs and motif data; relocate S4 numerical results without changing its filters or model; use integrated GEO H5MUs instead of original experiment directories. Preserve all saved notebook outputs. Actual companion/GEO files remain required and incomplete-data checks fail honestly until supplied.'
+          git push origin HEAD:refs/heads/publication/portable-data-inputs-tested
+          git rev-parse HEAD | tee /tmp/public-candidate.txt
+      - name: Gather test evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/public-evidence
+          cp /tmp/public-tests.log /tmp/public-live-downloads.json /tmp/public-static-audit.json /tmp/public-data-readiness.json /tmp/public-output-preservation.json /tmp/public-candidate.txt /tmp/public-evidence/ 2>/dev/null || true
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          root=Path('/tmp/public-input-tests')
+          for p in root.rglob('test-execution.log'):
+              dest=Path('/tmp/public-evidence')/p.relative_to(root)
+              dest.parent.mkdir(parents=True,exist_ok=True)
+              shutil.copy2(p,dest)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portable-public-input-validation
+          path: /tmp/public-evidence
+          retention-days: 7
