@@ -1,0 +1,20 @@
+name: Precomputed GEO figure validation
+on:
+  push:
+    branches: [publication/precomputed-geo-figures]
+    paths: [.github/workflows/precomputed-geo-validation.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - run: git archive --format=tar.gz --output=/tmp/public-code.tar.gz 55fe778b1fa4921e68baf2297b1d3f12f0555fd7 src scripts config tests notebooks README.md .gitignore docs data
+      - uses: actions/upload-artifact@v4
+        with:
+          name: current-public-code
+          path: /tmp/public-code.tar.gz
+          retention-days: 3
