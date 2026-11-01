@@ -1,0 +1,21 @@
+name: Compact plot inputs
+on:
+  push:
+    branches: [publication/compact-plot-inputs]
+    paths: ['.github/workflows/compact-plot-inputs.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 7ba32392c2f7491cd5e1b355e34ecedc0815ef26
+          lfs: false
+      - run: git archive --format=tar.gz --output=/tmp/current-compact-code.tar.gz HEAD src scripts config tests notebooks README.md .gitignore docs data
+      - uses: actions/upload-artifact@v4
+        with:
+          name: current-compact-code
+          path: /tmp/current-compact-code.tar.gz
+          retention-days: 3
