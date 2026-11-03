@@ -2,20 +2,132 @@ name: Repository output and environment
 on:
   push:
     branches: [maintenance/repo-output-environment]
-    paths: [.github/workflows/repo-output-environment.yml]
+    paths: ['.github/workflows/repo-output-environment.yml', '.maintenance/**']
 permissions:
-  contents: read
+  contents: write
 jobs:
-  inspect:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash -el {0}
+    env:
+      PYTHONPATH: src
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      NUMBA_NUM_THREADS: '2'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 8c70476231298d41e08184e75b687bddb524a52a
           lfs: false
-      - run: git archive --format=tar.gz --output=/tmp/output-env-baseline.tar.gz HEAD src scripts config tests notebooks README.md .gitignore docs
-      - uses: actions/upload-artifact@v4
+          fetch-depth: 0
+      - name: Apply guarded changes to current published baseline
+        run: |
+          cp .maintenance/output-environment.b64 .maintenance/apply_output_environment.py /tmp/
+          git checkout --detach 8c70476231298d41e08184e75b687bddb524a52a
+          python /tmp/apply_output_environment.py /tmp/output-environment.b64
+      - name: Install actual environment.yml with Conda
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          name: output-env-baseline
-          path: /tmp/output-env-baseline.tar.gz
-          retention-days: 3
+          miniforge-version: latest
+          activate-environment: ccperturbseq-figures
+          environment-file: environment.yml
+          auto-activate-base: false
+          channel-priority: strict
+      - name: Validate every dependency, module and kernel registration
+        run: |
+          set -o pipefail
+          python scripts/check_environment.py --report /tmp/output-env-packages.json | tee /tmp/output-env-packages.log
+          python -m pip freeze > /tmp/output-env-pip-freeze.txt
+          conda list --explicit > /tmp/output-env-conda-explicit.txt
+          python -m ipykernel install --prefix /tmp/output-env-kernel --name ccperturbseq-figures --display-name 'Python (ccperturbseq figures)'
+          python - <<'PY'
+          from pathlib import Path
+          import json,sys
+          record=json.loads(Path('/tmp/output-env-kernel/share/jupyter/kernels/ccperturbseq-figures/kernel.json').read_text())
+          assert Path(record['argv'][0]).resolve()==Path(sys.executable).resolve()
+          print('Kernel interpreter verified:',record['argv'][0])
+          PY
+      - name: Run all public reproduction and output tests
+        run: |
+          set -o pipefail
+          python -m pytest -q tests --basetemp=/tmp/output-env-tests 2>&1 | tee /tmp/output-env-tests.log
+          python scripts/audit_public_inputs.py > /tmp/output-env-static.json
+          python scripts/audit_public_inputs.py --check-data > /tmp/output-env-readiness.json
+      - name: Execute supplementary notebooks with real published companion data
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,os,subprocess,sys
+          script='''
+          from pathlib import Path
+          import json,sys,socket,logging
+          import IPython.display
+          IPython.display.display=lambda *a,**kw:None
+          logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
+          def guard(event,args):
+              if event=='open' and args and isinstance(args[0],(str,bytes)) and str(args[0]).startswith(('/oak/','/scratch/users/','/home/users/')):
+                  raise AssertionError('Institutional input access: '+str(args[0]))
+          sys.addaudithook(guard)
+          socket.socket.connect=lambda *a,**kw: (_ for _ in ()).throw(AssertionError('Unexpected network for precomputed supplementary data'))
+          nb=json.loads(Path(sys.argv[1]).read_text());ns={'__name__':'__main__'}
+          for i,c in enumerate(nb['cells']):
+              if c['cell_type']=='code':
+                  print('RUN_CELL',i,flush=True)
+                  exec(compile(''.join(c['source']),f'cell-{i}','exec'),ns)
+          root=Path.cwd().resolve()
+          assert ns['ctx']['output_dir'].is_relative_to(root/'output')
+          print('REAL_PUBLISHED_INPUTS_COMPLETED',flush=True)
+          '''
+          import textwrap
+          reports=[]
+          for name in ['Figure_S02','Figure_S04','Figure_S06']:
+              result=subprocess.run([sys.executable,'-c',textwrap.dedent(script),f'notebooks/supplementary/{name}.ipynb'],text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=600)
+              Path('/tmp/output-env-real-'+name+'.log').write_text(result.stdout)
+              if result.returncode:
+                  print(result.stdout[-12000:]);raise SystemExit(result.returncode)
+              files=list((Path('output')/name).rglob('*'))
+              report={'figure':name,'actual_published_data':True,'returncode':result.returncode,'svg_count':sum(p.suffix=='.svg' for p in files),'output_root':f'output/{name}'}
+              assert report['svg_count']>0
+              reports.append(report);print(report,flush=True)
+          Path('/tmp/output-env-real-study.json').write_text(json.dumps(reports,indent=2))
+          PY
+      - name: Commit only tested edits and preserve published data and saved outputs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,subprocess
+          expected=json.loads(Path('/tmp/output-env-paths.json').read_text())
+          for path in expected:
+              if path.endswith('.ipynb'):
+                  blob=subprocess.check_output(['git','hash-object','-w','--no-filters',path],text=True).strip()
+                  subprocess.run(['git','update-index','--add','--cacheinfo',f'100644,{blob},{path}'],check=True)
+              else:subprocess.run(['git','add','--',path],check=True)
+          staged=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          assert set(staged)==set(expected),(staged,expected)
+          assert not subprocess.check_output(['git','diff','HEAD','--name-only','--','data/'],text=True).strip(),'Published data changed'
+          for item in json.loads(Path('/tmp/output-env-preservation.json').read_text()):
+              nb=json.loads(subprocess.check_output(['git','show',':'+item['path']]))
+              for c in nb['cells']:c['source']=None
+              assert hashlib.sha256(json.dumps(nb,sort_keys=True,ensure_ascii=False).encode()).hexdigest()==item['unchanged_non_source_sha256']
+          PY
+          git diff --cached --check
+          git config user.name 'Tri Nguyen'
+          git config user.email '72826864+edtnguyen@users.noreply.github.com'
+          git commit -m 'Save notebook outputs inside the repo and add complete Conda environment' -m 'Use output/Figure_* and output/cache/derived independent of scratch or notebook launch directory; verify output confinement and all seven initializations. Add synchronized environment.yml, installation instructions and package/kernel checks. Preserve published study data, scientific calculations, and all saved notebook outputs.'
+          git push origin HEAD:refs/heads/maintenance/repo-output-environment-tested
+          git rev-parse HEAD > /tmp/output-env-candidate.txt
+      - name: Collect validation evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/output-env-evidence
+          cp /tmp/output-env-*.json /tmp/output-env-*.log /tmp/output-env-*.txt /tmp/output-env-evidence/ 2>/dev/null || true
+          cp environment.yml /tmp/output-env-evidence/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: repository-output-environment-validation
+          path: /tmp/output-env-evidence
+          retention-days: 7
