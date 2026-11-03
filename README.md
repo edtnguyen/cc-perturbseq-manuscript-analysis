@@ -67,10 +67,8 @@ output/
 
 These paths resolve from the repository root, even when Jupyter starts inside
 `notebooks/main/` or `notebooks/supplementary/`. `output/` is ignored by Git.
-The setup cell prints its absolute figure-output directory. Old scratch/results
-outputs and old downloaded caches are not moved or deleted. Existing saved
-notebook outputs record their earlier runs; rerun to generate files in `output/`.
-Source inputs remain in `data/reproduction/`; unchanged IGVF/GEO downloads are
+The setup cell prints its absolute figure-output directory. 
+Source inputs are stored in `data/reproduction/`; unchanged IGVF/GEO downloads are
 cached in `data/igvf/` and `data/geo/downloads/`. New numerical intermediates
 (including GEO regeneration) go under `output/cache/derived/`.
 
@@ -81,8 +79,7 @@ defined in `environment.yml`. Their setup cells download
 the required checksum-pinned IGVF files automatically, anonymously by default.
 Optional portal access-key authentication is supported without storing secrets.
 
-The notebooks use repository-relative paths from `config/paths.example.yaml`.
-Legacy institutional `paths.local.yaml` overrides are not used. Large downloaded
+The notebooks use repository-relative paths from `config/paths.example.yaml`. Large downloaded
 objects are cached under `data/igvf/`; derived representations are written under
 `output/cache/derived/`; figures and source tables are written under `output/<figure_id>/`.
 
@@ -94,10 +91,8 @@ by default. Optional regeneration downloads the submitted integrated H5MUs from
 GEO: **GSE352939** (Hippo) and **GSE352893** (iPSC-K562 mix).
 
 **Publication readiness:** default plotting requires the companion data and
-precomputed tables, not the large GEO objects. Optional GEO regeneration requires
-publicly accessible processed supplementary files. An assigned accession alone
-does not guarantee that downloads are released. Missing inputs produce explicit
-errors; no workflow falls back to institutional filesystem paths.
+precomputed tables, not the large GEO objects. Optional GEO regeneration is also provided. 
+Missing inputs produce explicit errors.
 
 ```bash
 python scripts/audit_public_inputs.py
