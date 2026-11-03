@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-11-03T13:32:42.681974+00:00",
+  "files": [
+    {
+      "key": "screen.genomewide_utest_pos_vs_neg",
+      "path": "data/reproduction/screen/combined_utest_P1P2_adj_test.txt",
+      "size_bytes": 1468414,
+      "sha256": "0f4010ff8860916f6bd20d3da189b6502837cef349e7163f7449557a0e4452a9",
+      "source_basename": "combined_utest_P1P2_adj_test.txt",
+      "source_sha256": "0f4010ff8860916f6bd20d3da189b6502837cef349e7163f7449557a0e4452a9",
+      "compression": "unchanged"
+    },
+    {
+      "key": "ccperturbseq.cnmf_usage",
+      "path": "data/reproduction/programs/cnmf_usage.consensus.tsv.gz",
+      "size_bytes": 16969229,
+      "sha256": "9e4a904aef0f508a2bdde9ef1c95114a76bd501238923031233e76fcf84f7a13",
+      "source_basename": "030526_100k_cells_100iter_allHVG_torch_halsvar_batch_e7_50.usages.k_50.dt_0_2.consensus.txt",
+      "source_sha256": "a735862cc2f0b767097a0fa0fa678c414342fd27bae47deea12c162de00dc267",
+      "compression": "gzip"
+    },
+    {
+      "key": "ccperturbseq.cnmf_spectra",
+      "path": "data/reproduction/programs/cnmf_spectra.consensus.tsv.gz",
+      "size_bytes": 2783337,
+      "sha256": "c2c776e7da7c31934ba4897c66f9f0d5b1238edeb9abb91b0204729ae81323fa",
+      "source_basename": "030526_100k_cells_100iter_allHVG_torch_halsvar_batch_e7_50.spectra.k_50.dt_0_2.consensus.txt",
+      "source_sha256": "7d5efa199e8ac846be14c539b38f4c83c6cc0359dfb1d2d3a82dba3fe6dba18e",
+      "compression": "gzip"
+    },
+    {
+      "key": "ccperturbseq.program_annotations",
+      "path": "data/reproduction/programs/Programs_annotations.xlsx",
+      "size_bytes": 9911,
+      "sha256": "4a0e7a08055f45e6b62805034295412f960edd5ee5cda1e8e90f969628c5db1e",
+      "source_basename": "Programs_annotations.xlsx",
+      "source_sha256": "4a0e7a08055f45e6b62805034295412f960edd5ee5cda1e8e90f969628c5db1e",
+      "compression": "unchanged"
+    },
+    {
+      "key": "ccperturbseq.target_metadata",
+      "path": "data/reproduction/programs/300genes_guide_metadata_v43.tsv",
+      "size_bytes": 305023,
+      "sha256": "42f972e1379bd74d1db4a1dfc0be35bd6639b7ffaf8febb577b105e32f5efe8a",
+      "source_basename": "300genes_guide_metadata_v43.tsv",
+      "source_sha256": "42f972e1379bd74d1db4a1dfc0be35bd6639b7ffaf8febb577b105e32f5efe8a",
+      "compression": "unchanged"
+    },
+    {
+      "key": "ccperturbseq.figure1d_program_metadata",
+      "path": "data/reproduction/programs/program_activity_long_v4.csv",
+      "size_bytes": 24047,
+      "sha256": "c9e41312c178182f4386069695b9b6fc3daa6744b94d44f894506b25c23f9f97",
+      "source_basename": "program_activity_long_v4.csv",
+      "source_sha256": "c9e41312c178182f4386069695b9b6fc3daa6744b94d44f894506b25c23f9f97",
+      "compression": "unchanged"
+    },
+    {
+      "key": "ccperturbseq.figure1d_program_order",
+      "path": "data/reproduction/programs/program_order.txt",
+      "size_bytes": 427,
+      "sha256": "5c3684920d99235464491a07420f6e4dff102978e23903de30a22c665d1ab52d",
+      "source_basename": "program_order.txt",
+      "source_sha256": "5c3684920d99235464491a07420f6e4dff102978e23903de30a22c665d1ab52d",
+      "compression": "unchanged"
+    },
+    {
+      "key": "multiome.enhancer_enrichment_results",
+      "path": "data/reproduction/motifs/enhancer_enrichment_results_min10.tsv",
+      "size_bytes": 1205371,
+      "sha256": "1bf879aa4e6ed6720fa788b5be027573acdb07fd0d234af9a9fc62e81c25bb23",
+      "source_basename": "enhancer_enrichment_results_min10.tsv",
+      "source_sha256": "1bf879aa4e6ed6720fa788b5be027573acdb07fd0d234af9a9fc62e81c25bb23",
+      "compression": "unchanged"
+    },
+    {
+      "key": "multiome.cluster_motif_map",
+      "path": "data/reproduction/motifs/cluster_to_tf_motif_id_mapping.tsv",
+      "size_bytes": 75056,
+      "sha256": "ef06ee3fbf5c9e42060685198d613974423a8f6fbaa938cf8c37b22c6e65681f",
+      "source_basename": "cluster_to_tf_motif_id_mapping.tsv",
+      "source_sha256": "ef06ee3fbf5c9e42060685198d613974423a8f6fbaa938cf8c37b22c6e65681f",
+      "compression": "unchanged"
+    },
+    {
+      "key": "multiome.modisco_compiled_h5",
+      "path": "data/reproduction/motifs/modisco_compiled.h5",
+      "size_bytes": 468352,
+      "sha256": "6de5d60023ed72179f753b40b5b36d7144c05270a7fbf20250d7445138c091df",
+      "source_basename": "modisco_compiled.h5",
+      "source_sha256": "6de5d60023ed72179f753b40b5b36d7144c05270a7fbf20250d7445138c091df",
+      "compression": "unchanged"
+    },
+    {
+      "key": "cell_order.expression",
+      "path": "data/reproduction/programs/expression_cell_order.tsv.gz",
+      "size_bytes": 638280,
+      "sha256": "d9e0d9a9859d5b6dcc7a5f0293c0662af131b7c7a9e5154905fac24f0927283f",
+      "n_cells": 121616,
+      "source_basename": "3.all_days_concat_pc30_all_genes_sceptre_guides.h5ad"
+    },
+    {
+      "key": "cell_order.cnmf",
+      "path": "data/reproduction/programs/cnmf_cell_order.tsv.gz",
+      "size_bytes": 638274,
+      "sha256": "f8516fad8b819a8e472c57adae317e0d1d6b6afeffbb9d6ef299226915d324bf",
+      "n_cells": 121616,
+      "source_basename": "cNMF_50_0_2.h5mu"
+    },
+    {
+      "key": "validation.compatibility",
+      "path": "data/reproduction/screen/validation_guide_compatibility.tsv",
+      "size_bytes": 127088,
+      "sha256": "7898402dce78a455a9a015efd1bda1e11b5f7fb4c3b4edd85523a32f1221c486",
+      "count_source": "IGVFFI5157STFU",
+      "all_six_count_columns_verified_equal": true
+    },
+    {
+      "key": "s4.qq",
+      "path": "data/reproduction/s4/k_50.dt_0_2/all_days_QQ_points.csv",
+      "size_bytes": 37534643,
+      "sha256": "bcdb68f5d29538b9f1f6e13c99c28de00c31d4191d0f63849fe2445414b9ced9",
+      "source_basename": "all_days_QQ_points.csv",
+      "source_sha256": "bcdb68f5d29538b9f1f6e13c99c28de00c31d4191d0f63849fe2445414b9ced9",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.manifest",
+      "path": "data/reproduction/s4/k_50.dt_0_2/biological_replicate_effects/replicate_beta_manifest.csv",
+      "size_bytes": 964,
+      "sha256": "47e790cb4912d89917c968e0144034b7d4022e436bc8324ac99ca6d281ea456e"
+    },
+    {
+      "key": "s4.beta.d0.0",
+      "path": "data/reproduction/s4/k_50.dt_0_2/biological_replicate_effects/betas_by_replicate/d0/d0__d0_rep1__target_betas_wide.tsv",
+      "size_bytes": 307031,
+      "sha256": "00121aafb2b631b1f31c70c0a26439e0650c3a7acbb78048fb89cbdbf9e8b476",
+      "source_basename": "d0__d0_rep1__target_betas_wide.tsv",
+      "source_sha256": "00121aafb2b631b1f31c70c0a26439e0650c3a7acbb78048fb89cbdbf9e8b476",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.beta.d0.1",
+      "path": "data/reproduction/s4/k_50.dt_0_2/biological_replicate_effects/betas_by_replicate/d0/d0__d0_rep2__target_betas_wide.tsv",
+      "size_bytes": 307194,
+      "sha256": "16ecd21b962a73c01d59954d308fe5f30df93a2f5088bc2c4eb7c7e88727167c",
+      "source_basename": "d0__d0_rep2__target_betas_wide.tsv",
+      "source_sha256": "16ecd21b962a73c01d59954d308fe5f30df93a2f5088bc2c4eb7c7e88727167c",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.beta.d1.2",
+      "path": "data/reproduction/s4/k_50.dt_0_2/biological_replicate_effects/betas_by_replicate/d1/d1__d1_rep1__target_betas_wide.tsv",
+      "size_bytes": 304724,
+      "sha256": "f6318c330b5cc735700dcdb0d2d33f3318761ee3ecee2d71674008c8aa84b8b4",
+      "source_basename": "d1__d1_rep1__target_betas_wide.tsv",
+      "source_sha256": "f6318c330b5cc735700dcdb0d2d33f3318761ee3ecee2d71674008c8aa84b8b4",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.beta.d1.3",
+      "path": "data/reproduction/s4/k_50.dt_0_2/biological_replicate_effects/betas_by_replicate/d1/d1__d1_rep2__target_betas_wide.tsv",
+      "size_bytes": 306537,
+      "sha256": "6147e884ecba5cfc3c0380ee0c986bdab60192a54667098cf9ea9d7420054af8",
+      "source_basename": "d1__d1_rep2__target_betas_wide.tsv",
+      "source_sha256": "6147e884ecba5cfc3c0380ee0c986bdab60192a54667098cf9ea9d7420054af8",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.beta.d2.4",
+      "path": "data/reproduction/s4/k_50.dt_0_2/biological_replicate_effects/betas_by_replicate/d2/d2__d2_rep1__target_betas_wide.tsv",
+      "size_bytes": 306498,
+      "sha256": "04add82e808335f259cff9293981f6c90ac28ec33de2f06c74244e6cdf389404",
+      "source_basename": "d2__d2_rep1__target_betas_wide.tsv",
+      "source_sha256": "04add82e808335f259cff9293981f6c90ac28ec33de2f06c74244e6cdf389404",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.beta.d2.5",
+      "path": "data/reproduction/s4/k_50.dt_0_2/biological_replicate_effects/betas_by_replicate/d2/d2__d2_rep2__target_betas_wide.tsv",
+      "size_bytes": 306005,
+      "sha256": "3c6e19b62c015acf100906b65861353c03ff870598dab0a56796fbf0c48fb8e9",
+      "source_basename": "d2__d2_rep2__target_betas_wide.tsv",
+      "source_sha256": "3c6e19b62c015acf100906b65861353c03ff870598dab0a56796fbf0c48fb8e9",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.beta.d3.6",
+      "path": "data/reproduction/s4/k_50.dt_0_2/biological_replicate_effects/betas_by_replicate/d3/d3__d3_rep1__target_betas_wide.tsv",
+      "size_bytes": 305963,
+      "sha256": "5357616f230f3c075f3e1da37e4f775c611b5519caba4b2f018137f0aa5db053",
+      "source_basename": "d3__d3_rep1__target_betas_wide.tsv",
+      "source_sha256": "5357616f230f3c075f3e1da37e4f775c611b5519caba4b2f018137f0aa5db053",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.beta.d3.7",
+      "path": "data/reproduction/s4/k_50.dt_0_2/biological_replicate_effects/betas_by_replicate/d3/d3__d3_rep2__target_betas_wide.tsv",
+      "size_bytes": 306111,
+      "sha256": "31ea75d1a8763fae354e3f43a066f8b34aa2d14e19ee31c406b34d929e88fbb9",
+      "source_basename": "d3__d3_rep2__target_betas_wide.tsv",
+      "source_sha256": "31ea75d1a8763fae354e3f43a066f8b34aa2d14e19ee31c406b34d929e88fbb9",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d0_target_pvalues_skew_long.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d0/d0_target_pvalues_skew_long.tsv",
+      "size_bytes": 1252951,
+      "sha256": "e30d3c6868de7b607264ee79e2ccc56bb99b119a57e40b03efd207507851daa2",
+      "source_basename": "d0_target_pvalues_skew_long.tsv",
+      "source_sha256": "e30d3c6868de7b607264ee79e2ccc56bb99b119a57e40b03efd207507851daa2",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d0_target_pvalues_skew_wide.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d0/d0_target_pvalues_skew_wide.tsv",
+      "size_bytes": 294691,
+      "sha256": "cad8d2dd5d858da0c27467718cbf031cdffd58d917e2c7eb5b5988f4093d5c39",
+      "source_basename": "d0_target_pvalues_skew_wide.tsv",
+      "source_sha256": "cad8d2dd5d858da0c27467718cbf031cdffd58d917e2c7eb5b5988f4093d5c39",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d0_target_pvalues_empirical_long.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d0/d0_target_pvalues_empirical_long.tsv",
+      "size_bytes": 1177956,
+      "sha256": "d10d6931936879ca432145e1b52b9a67b8cafcba8822fdb37188be8f40aba505",
+      "source_basename": "d0_target_pvalues_empirical_long.tsv",
+      "source_sha256": "d10d6931936879ca432145e1b52b9a67b8cafcba8822fdb37188be8f40aba505",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d0_target_pvalues_empirical_wide.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d0/d0_target_pvalues_empirical_wide.tsv",
+      "size_bytes": 294271,
+      "sha256": "ab5c767afe92fd42d63375d6ca160436717988bbc340de4321c093fd9b6943e7",
+      "source_basename": "d0_target_pvalues_empirical_wide.tsv",
+      "source_sha256": "ab5c767afe92fd42d63375d6ca160436717988bbc340de4321c093fd9b6943e7",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d1_target_pvalues_skew_long.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d1/d1_target_pvalues_skew_long.tsv",
+      "size_bytes": 1251444,
+      "sha256": "c032b2141c2f84c57fdeab55a7ef5e40266acdd9f7ce7617ac0476773a9e403e",
+      "source_basename": "d1_target_pvalues_skew_long.tsv",
+      "source_sha256": "c032b2141c2f84c57fdeab55a7ef5e40266acdd9f7ce7617ac0476773a9e403e",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d1_target_pvalues_skew_wide.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d1/d1_target_pvalues_skew_wide.tsv",
+      "size_bytes": 293095,
+      "sha256": "2c9cfe7d3bf4317129f9b646d754e59f9def22905db6f8da6da40857ef9e2992",
+      "source_basename": "d1_target_pvalues_skew_wide.tsv",
+      "source_sha256": "2c9cfe7d3bf4317129f9b646d754e59f9def22905db6f8da6da40857ef9e2992",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d1_target_pvalues_empirical_long.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d1/d1_target_pvalues_empirical_long.tsv",
+      "size_bytes": 1176625,
+      "sha256": "9ca7eaa0dc7d178095ab210f907e912d53e006f8b1335b70248e01a3ad397640",
+      "source_basename": "d1_target_pvalues_empirical_long.tsv",
+      "source_sha256": "9ca7eaa0dc7d178095ab210f907e912d53e006f8b1335b70248e01a3ad397640",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d1_target_pvalues_empirical_wide.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d1/d1_target_pvalues_empirical_wide.tsv",
+      "size_bytes": 292940,
+      "sha256": "3d7b6b95fac90247049ff67472c52fbb6db388f44f13c948fffb389571d7437d",
+      "source_basename": "d1_target_pvalues_empirical_wide.tsv",
+      "source_sha256": "3d7b6b95fac90247049ff67472c52fbb6db388f44f13c948fffb389571d7437d",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d2_target_pvalues_skew_long.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d2/d2_target_pvalues_skew_long.tsv",
+      "size_bytes": 1251924,
+      "sha256": "1db830161395b52bffac1c59747ddda21ea2716fd748197c24266016bdd28bbf",
+      "source_basename": "d2_target_pvalues_skew_long.tsv",
+      "source_sha256": "1db830161395b52bffac1c59747ddda21ea2716fd748197c24266016bdd28bbf",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d2_target_pvalues_skew_wide.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d2/d2_target_pvalues_skew_wide.tsv",
+      "size_bytes": 293728,
+      "sha256": "a9828fa15e7f653890734032ab1114568c07f2963c252ad3325f4a3aff4e75d4",
+      "source_basename": "d2_target_pvalues_skew_wide.tsv",
+      "source_sha256": "a9828fa15e7f653890734032ab1114568c07f2963c252ad3325f4a3aff4e75d4",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d2_target_pvalues_empirical_long.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d2/d2_target_pvalues_empirical_long.tsv",
+      "size_bytes": 1177242,
+      "sha256": "b09359f086c8bf6416c51628397c6ef38bf18b8684483af0047489e7e55378a7",
+      "source_basename": "d2_target_pvalues_empirical_long.tsv",
+      "source_sha256": "b09359f086c8bf6416c51628397c6ef38bf18b8684483af0047489e7e55378a7",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d2_target_pvalues_empirical_wide.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d2/d2_target_pvalues_empirical_wide.tsv",
+      "size_bytes": 293557,
+      "sha256": "3f83568689808633f4bcc676349ebd8b4866c329241dc383b371ce76557d50a5",
+      "source_basename": "d2_target_pvalues_empirical_wide.tsv",
+      "source_sha256": "3f83568689808633f4bcc676349ebd8b4866c329241dc383b371ce76557d50a5",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d3_target_pvalues_skew_long.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d3/d3_target_pvalues_skew_long.tsv",
+      "size_bytes": 1254530,
+      "sha256": "e14b1e1e8634e54e4b6a938f41e620a977d029ae117feaf7f0710200f4b209da",
+      "source_basename": "d3_target_pvalues_skew_long.tsv",
+      "source_sha256": "e14b1e1e8634e54e4b6a938f41e620a977d029ae117feaf7f0710200f4b209da",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d3_target_pvalues_skew_wide.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d3/d3_target_pvalues_skew_wide.tsv",
+      "size_bytes": 296242,
+      "sha256": "9b6ffd9cca75a7b80befe74228ab4c1769969c6ac210e4ec0d800cd09fe445d3",
+      "source_basename": "d3_target_pvalues_skew_wide.tsv",
+      "source_sha256": "9b6ffd9cca75a7b80befe74228ab4c1769969c6ac210e4ec0d800cd09fe445d3",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d3_target_pvalues_empirical_long.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d3/d3_target_pvalues_empirical_long.tsv",
+      "size_bytes": 1178812,
+      "sha256": "36492f3a90f0e464288a038259d7dd174d08a1a7189f81664288cde4e8b129fe",
+      "source_basename": "d3_target_pvalues_empirical_long.tsv",
+      "source_sha256": "36492f3a90f0e464288a038259d7dd174d08a1a7189f81664288cde4e8b129fe",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.pvalues.d3_target_pvalues_empirical_wide.tsv",
+      "path": "data/reproduction/s4/k_50.dt_0_2/d3/d3_target_pvalues_empirical_wide.tsv",
+      "size_bytes": 295127,
+      "sha256": "2eaefa332f19e833b3ace7ee02cc923ad0095e8f6635d5e4745baf1f05a96f62",
+      "source_basename": "d3_target_pvalues_empirical_wide.tsv",
+      "source_sha256": "2eaefa332f19e833b3ace7ee02cc923ad0095e8f6635d5e4745baf1f05a96f62",
+      "compression": "unchanged"
+    },
+    {
+      "key": "s4.counts",
+      "path": "data/reproduction/s4/k_50.dt_0_2/biological_replicate_effects/plots/DIAGNOSTIC_target_cell_counts_by_replicate.csv",
+      "size_bytes": 59982,
+      "sha256": "7010cc7d6cd65e8da7e118e8721c12f4658ee47e79d9c324c704045826f37fc1"
+    }
+  ],
+  "geo_datasets_included": false,
+  "geo_plot_bundles": {
+    "hippo_timecourse": {
+      "source_sha256": "7823f86ca04a13ab3f2ad769e1f555fd16b5ad50a89cf50b9f0c87e791b07e6d",
+      "n_tables": 12
+    },
+    "ipsc_k562_mix": {
+      "source_sha256": "b065bf7bbcb48dff148a6588630ba269702642d37576d981f25b0058f3824bcb",
+      "n_tables": 4
+    }
+  },
+  "cnmf_tsv_policy": "Exact original representations retained; no unverified substitution from H5MU loadings or usage.",
+  "s4_policy": "Completed numerical results; >=20 target cells and pooled q<=0.10 selection unchanged; no raw CRT run."
+}

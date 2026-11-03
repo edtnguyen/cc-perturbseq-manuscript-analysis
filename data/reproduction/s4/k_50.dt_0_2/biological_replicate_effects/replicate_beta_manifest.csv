@@ -1,0 +1,9 @@
+day,biological_sample,status,n_cells,beta_path,metadata_path
+d0,d0_rep1,written,17488,betas_by_replicate/d0/d0__d0_rep1__target_betas_wide.tsv,d0__d0_rep1__run_metadata.json
+d0,d0_rep2,written,21121,betas_by_replicate/d0/d0__d0_rep2__target_betas_wide.tsv,d0__d0_rep2__run_metadata.json
+d1,d1_rep1,written,5856,betas_by_replicate/d1/d1__d1_rep1__target_betas_wide.tsv,d1__d1_rep1__run_metadata.json
+d1,d1_rep2,written,11069,betas_by_replicate/d1/d1__d1_rep2__target_betas_wide.tsv,d1__d1_rep2__run_metadata.json
+d2,d2_rep1,written,10895,betas_by_replicate/d2/d2__d2_rep1__target_betas_wide.tsv,d2__d2_rep1__run_metadata.json
+d2,d2_rep2,written,11085,betas_by_replicate/d2/d2__d2_rep2__target_betas_wide.tsv,d2__d2_rep2__run_metadata.json
+d3,d3_rep1,written,21377,betas_by_replicate/d3/d3__d3_rep1__target_betas_wide.tsv,d3__d3_rep1__run_metadata.json
+d3,d3_rep2,written,22725,betas_by_replicate/d3/d3__d3_rep2__target_betas_wide.tsv,d3__d3_rep2__run_metadata.json

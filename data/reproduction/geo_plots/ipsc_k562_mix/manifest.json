@@ -1,0 +1,145 @@
+{
+  "created_utc": "2026-11-03T13:32:42.634532+00:00",
+  "dataset": "ipsc_k562_mix",
+  "metadata": {
+    "cell_guide_threshold_for_mixing": 3,
+    "lineages": "frozen in accepted numerical outputs",
+    "n_cells": 16818
+  },
+  "schema": "ccperturbseq.plot_inputs.v1",
+  "source": {
+    "filenames": {
+      "cell_metrics": "Figure_S02_all_cell_metrics.csv.gz",
+      "cluster_annotation": "Figure_S02_transcriptomic_cluster_annotation.csv",
+      "median_diagnostics": "Figure_S02_manuscript_median_diagnostics.csv",
+      "run_provenance": "Figure_S02_parse_mix_provenance.json",
+      "saturation": "Figure_S02m_transcript_saturation_source.csv"
+    },
+    "mode": "saved_s2_outputs",
+    "note": "Saved-table export is not a full verification of source RNA/guide matrices. Optional GEO regeneration performs that verification.",
+    "raw_matrix_integrity_verified": false,
+    "reclustered_cells": false,
+    "recomputed_from_modalities": false,
+    "refit_cnmf": false,
+    "sha256": "b065bf7bbcb48dff148a6588630ba269702642d37576d981f25b0058f3824bcb",
+    "sha256_scope": "selected uncompressed plotting tables"
+  },
+  "tables": {
+    "cell_metrics": {
+      "file": "cell_metrics.tsv.gz",
+      "sha256": "1c56a241962ec0f4d5b338bf8a026aaed3765169037b67048860b58b97edcbd3",
+      "size_bytes": 484765,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "sample",
+          "total_counts",
+          "n_genes_by_counts",
+          "pct_counts_mt",
+          "cell_type",
+          "total_guide_umis",
+          "top_guide_umis",
+          "K562_guide_umis",
+          "hiPSC_guide_umis",
+          "K562_guide_umis_ge3",
+          "hiPSC_guide_umis_ge3",
+          "matched_pool_guide_umis",
+          "guide_pool_specificity"
+        ],
+        "dtypes": {
+          "K562_guide_umis": "float64",
+          "K562_guide_umis_ge3": "float64",
+          "cell_type": "object",
+          "guide_pool_specificity": "float64",
+          "hiPSC_guide_umis": "float64",
+          "hiPSC_guide_umis_ge3": "float64",
+          "matched_pool_guide_umis": "float64",
+          "n_genes_by_counts": "int64",
+          "pct_counts_mt": "float64",
+          "sample": "object",
+          "top_guide_umis": "float64",
+          "total_counts": "float64",
+          "total_guide_umis": "float64"
+        },
+        "index_dtype": "object",
+        "index_name": "cell_id"
+      }
+    },
+    "cluster_annotation": {
+      "file": "cluster_annotation.tsv.gz",
+      "sha256": "6ae165a109b2cd24a21be015c2e1df2f03a6c7c3ee05dfd78211ff335854769e",
+      "size_bytes": 173,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "leiden",
+          "K562_marker_score",
+          "hiPSC_marker_score",
+          "n_cells",
+          "cell_type"
+        ],
+        "dtypes": {
+          "K562_marker_score": "float64",
+          "cell_type": "object",
+          "hiPSC_marker_score": "float64",
+          "leiden": "int64",
+          "n_cells": "int64"
+        },
+        "index_dtype": "int64",
+        "index_name": null
+      }
+    },
+    "median_diagnostics": {
+      "file": "median_diagnostics.tsv.gz",
+      "sha256": "4315f39bcc4bcff0474fd9bfef33e17e52001af640d69078f90083244c05ffa2",
+      "size_bytes": 479,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "metric",
+          "cell_type",
+          "primer",
+          "n_cells",
+          "observed_median",
+          "manuscript_median",
+          "difference",
+          "acceptance_role"
+        ],
+        "dtypes": {
+          "acceptance_role": "object",
+          "cell_type": "object",
+          "difference": "float64",
+          "manuscript_median": "float64",
+          "metric": "object",
+          "n_cells": "int64",
+          "observed_median": "float64",
+          "primer": "object"
+        },
+        "index_dtype": "int64",
+        "index_name": null
+      }
+    },
+    "saturation": {
+      "file": "saturation.tsv.gz",
+      "sha256": "510430d2711000a6c4df2579f195e4c02629cef7a68e64b5bab7e5d5386a54f6",
+      "size_bytes": 515,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "mean_assigned_reads_per_cell",
+          "median_transcript_umis_per_cell",
+          "primer",
+          "source_file"
+        ],
+        "dtypes": {
+          "mean_assigned_reads_per_cell": "float64",
+          "median_transcript_umis_per_cell": "int64",
+          "primer": "object",
+          "source_file": "object"
+        },
+        "index_dtype": "int64",
+        "index_name": null
+      }
+    }
+  }
+}

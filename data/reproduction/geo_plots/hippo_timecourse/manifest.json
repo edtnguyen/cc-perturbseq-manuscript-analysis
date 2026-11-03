@@ -1,0 +1,435 @@
+{
+  "created_utc": "2026-11-03T13:32:41.698300+00:00",
+  "dataset": "hippo_timecourse",
+  "metadata": {
+    "Figure_3f": {
+      "conditions": [
+        "D3 Control",
+        "D2-3 HIPPOa",
+        "D1-3 HIPPOa",
+        "D2-3 HIPPOi",
+        "D1-3 HIPPOi"
+      ],
+      "excluded_sublibrary": "s8 if present",
+      "gene_standard_scale": "var",
+      "n_D3_QC_cells": 23656,
+      "n_common_cells": 212890,
+      "program_projection": "X_cnmf_clr_top_specific_200",
+      "program_projection_gene_set": "top_specific_200"
+    },
+    "Figure_4c": {
+      "conditions": [
+        "D1 Control",
+        "D1.33 Control",
+        "D1.67 Control",
+        "D2 Control",
+        "D1-1.33 HIPPOa",
+        "D1-1.67 HIPPOa",
+        "D1-2 HIPPOa",
+        "D1-1.33 HIPPOi",
+        "D1-1.67 HIPPOi",
+        "D1-2 HIPPOi"
+      ],
+      "excluded_sublibrary": "s8 if present",
+      "gene_standard_scale": "var",
+      "n_D1_to_D2_QC_cells": 56278,
+      "n_common_cells": 212890,
+      "program_projection": "X_cnmf_clr_top_specific_200",
+      "program_projection_gene_set": "top_specific_200",
+      "source_workflow": "hippo_tc_analysis_clean.ipynb D1-2 subset"
+    }
+  },
+  "schema": "ccperturbseq.plot_inputs.v1",
+  "source": {
+    "filenames": {
+      "projection": "Hippo_timecourse_reprojected_cNMF_compare_gene_sets.cell_x_program.h5ad",
+      "query": "Hippo_timecourse_combined.h5ad"
+    },
+    "mode": "hippo_h5ad_pair",
+    "note": "Saved-table export is not a full verification of source RNA/guide matrices. Optional GEO regeneration performs that verification.",
+    "raw_matrix_integrity_verified": false,
+    "reclustered_cells": false,
+    "recomputed_from_modalities": true,
+    "refit_cnmf": false,
+    "sha256": "7823f86ca04a13ab3f2ad769e1f555fd16b5ad50a89cf50b9f0c87e791b07e6d",
+    "sha256_scope": "selected uncompressed plotting tables"
+  },
+  "tables": {
+    "Figure_3f_genes": {
+      "file": "Figure_3f_genes.tsv.gz",
+      "sha256": "7a0d701dd9287ead60352692b6dac39fa13bdc8a6b25c874a6a0e0df0be3be88",
+      "size_bytes": 1005,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "condition",
+          "gene",
+          "n_cells",
+          "mean_log_normalized_expression",
+          "fraction_expressing"
+        ],
+        "dtypes": {
+          "condition": "object",
+          "fraction_expressing": "float64",
+          "gene": "object",
+          "mean_log_normalized_expression": "float64",
+          "n_cells": "int64"
+        },
+        "index_dtype": "int64",
+        "index_name": null
+      }
+    },
+    "Figure_3f_genes_dot_color": {
+      "file": "Figure_3f_genes_dot_color.tsv.gz",
+      "sha256": "396ab908ccbb677cf3d88244c4d7f4eb4a9da78439dadc2877dd59f787600da9",
+      "size_bytes": 347,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "CDH5",
+          "NRP1",
+          "EFNB2",
+          "KRT8",
+          "TAGLN",
+          "ANKRD1"
+        ],
+        "dtypes": {
+          "ANKRD1": "float64",
+          "CDH5": "float64",
+          "EFNB2": "float64",
+          "KRT8": "float64",
+          "NRP1": "float64",
+          "TAGLN": "float64"
+        },
+        "index_categories": {
+          "categories": [
+            "D3 Control",
+            "D2-3 HIPPOa",
+            "D1-3 HIPPOa",
+            "D2-3 HIPPOi",
+            "D1-3 HIPPOi"
+          ],
+          "ordered": true
+        },
+        "index_dtype": "object",
+        "index_name": null
+      }
+    },
+    "Figure_3f_genes_dot_size": {
+      "file": "Figure_3f_genes_dot_size.tsv.gz",
+      "sha256": "fe19d96a7bea871d3df0d184909d52827bd07da99f5dffbed01a34083989657b",
+      "size_bytes": 455,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "CDH5",
+          "NRP1",
+          "EFNB2",
+          "KRT8",
+          "TAGLN",
+          "ANKRD1"
+        ],
+        "dtypes": {
+          "ANKRD1": "float64",
+          "CDH5": "float64",
+          "EFNB2": "float64",
+          "KRT8": "float64",
+          "NRP1": "float64",
+          "TAGLN": "float64"
+        },
+        "index_categories": {
+          "categories": [
+            "D3 Control",
+            "D2-3 HIPPOa",
+            "D1-3 HIPPOa",
+            "D2-3 HIPPOi",
+            "D1-3 HIPPOi"
+          ],
+          "ordered": true
+        },
+        "index_dtype": "object",
+        "index_name": null
+      }
+    },
+    "Figure_3f_programs": {
+      "file": "Figure_3f_programs.tsv.gz",
+      "sha256": "52ede3329ee6250609e7d6e804bcd06a75bd67fdd19b3f13f582dcc17f93bc5f",
+      "size_bytes": 414,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "condition",
+          "program",
+          "n_cells",
+          "mean_clr",
+          "fraction_clr_positive"
+        ],
+        "dtypes": {
+          "condition": "object",
+          "fraction_clr_positive": "float64",
+          "mean_clr": "float64",
+          "n_cells": "int64",
+          "program": "object"
+        },
+        "index_dtype": "int64",
+        "index_name": null
+      }
+    },
+    "Figure_3f_programs_dot_color": {
+      "file": "Figure_3f_programs_dot_color.tsv.gz",
+      "sha256": "adca37d45ad3e12dd67e50d447b2c6decdd1e2456f2a566063060557d3ad398c",
+      "size_bytes": 231,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "P2",
+          "P34"
+        ],
+        "dtypes": {
+          "P2": "float64",
+          "P34": "float64"
+        },
+        "index_categories": {
+          "categories": [
+            "D3 Control",
+            "D2-3 HIPPOa",
+            "D1-3 HIPPOa",
+            "D2-3 HIPPOi",
+            "D1-3 HIPPOi"
+          ],
+          "ordered": true
+        },
+        "index_dtype": "object",
+        "index_name": null
+      }
+    },
+    "Figure_3f_programs_dot_size": {
+      "file": "Figure_3f_programs_dot_size.tsv.gz",
+      "sha256": "ade97f4574fa5130ea89d5bce5fd5ff8e8e8e83b04565ad4eb6c8e122412f9bd",
+      "size_bytes": 225,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "P2",
+          "P34"
+        ],
+        "dtypes": {
+          "P2": "float64",
+          "P34": "float64"
+        },
+        "index_categories": {
+          "categories": [
+            "D3 Control",
+            "D2-3 HIPPOa",
+            "D1-3 HIPPOa",
+            "D2-3 HIPPOi",
+            "D1-3 HIPPOi"
+          ],
+          "ordered": true
+        },
+        "index_dtype": "object",
+        "index_name": null
+      }
+    },
+    "Figure_4c_genes": {
+      "file": "Figure_4c_genes.tsv.gz",
+      "sha256": "45fd087332ad157e068457beb324f676bc0cc97a4e266f46cb92fc3213144a7d",
+      "size_bytes": 2132,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "condition",
+          "gene",
+          "n_cells",
+          "mean_log_normalized_expression",
+          "fraction_expressing"
+        ],
+        "dtypes": {
+          "condition": "object",
+          "fraction_expressing": "float64",
+          "gene": "object",
+          "mean_log_normalized_expression": "float64",
+          "n_cells": "int64"
+        },
+        "index_dtype": "int64",
+        "index_name": null
+      }
+    },
+    "Figure_4c_genes_dot_color": {
+      "file": "Figure_4c_genes_dot_color.tsv.gz",
+      "sha256": "4248589fb5a2db8458cbe3ddc9f5949a569c78edb52589e1f54fef293d4267ab",
+      "size_bytes": 757,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "HAND1",
+          "ETV2",
+          "TAL1",
+          "FLI1",
+          "ANKRD1",
+          "KRT19",
+          "SLC8A1"
+        ],
+        "dtypes": {
+          "ANKRD1": "float64",
+          "ETV2": "float64",
+          "FLI1": "float64",
+          "HAND1": "float64",
+          "KRT19": "float64",
+          "SLC8A1": "float64",
+          "TAL1": "float64"
+        },
+        "index_categories": {
+          "categories": [
+            "D1 Control",
+            "D1.33 Control",
+            "D1.67 Control",
+            "D2 Control",
+            "D1-1.33 HIPPOa",
+            "D1-1.67 HIPPOa",
+            "D1-2 HIPPOa",
+            "D1-1.33 HIPPOi",
+            "D1-1.67 HIPPOi",
+            "D1-2 HIPPOi"
+          ],
+          "ordered": true
+        },
+        "index_dtype": "object",
+        "index_name": null
+      }
+    },
+    "Figure_4c_genes_dot_size": {
+      "file": "Figure_4c_genes_dot_size.tsv.gz",
+      "sha256": "64ef91dccc7d9ef856d5550946b973fa30b4fd1b76ffa68389ab93d0cbcb5efc",
+      "size_bytes": 869,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "HAND1",
+          "ETV2",
+          "TAL1",
+          "FLI1",
+          "ANKRD1",
+          "KRT19",
+          "SLC8A1"
+        ],
+        "dtypes": {
+          "ANKRD1": "float64",
+          "ETV2": "float64",
+          "FLI1": "float64",
+          "HAND1": "float64",
+          "KRT19": "float64",
+          "SLC8A1": "float64",
+          "TAL1": "float64"
+        },
+        "index_categories": {
+          "categories": [
+            "D1 Control",
+            "D1.33 Control",
+            "D1.67 Control",
+            "D2 Control",
+            "D1-1.33 HIPPOa",
+            "D1-1.67 HIPPOa",
+            "D1-2 HIPPOa",
+            "D1-1.33 HIPPOi",
+            "D1-1.67 HIPPOi",
+            "D1-2 HIPPOi"
+          ],
+          "ordered": true
+        },
+        "index_dtype": "object",
+        "index_name": null
+      }
+    },
+    "Figure_4c_programs": {
+      "file": "Figure_4c_programs.tsv.gz",
+      "sha256": "03e464d654dc7c0d1fa6b149935711dbabd258914611120d22621cbe84b43689",
+      "size_bytes": 698,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "condition",
+          "program",
+          "n_cells",
+          "mean_clr",
+          "fraction_clr_positive"
+        ],
+        "dtypes": {
+          "condition": "object",
+          "fraction_clr_positive": "float64",
+          "mean_clr": "float64",
+          "n_cells": "int64",
+          "program": "object"
+        },
+        "index_dtype": "int64",
+        "index_name": null
+      }
+    },
+    "Figure_4c_programs_dot_color": {
+      "file": "Figure_4c_programs_dot_color.tsv.gz",
+      "sha256": "a903da102de7b222ca50a88fce838691c368432a20edec6c4f8dbf51f2644578",
+      "size_bytes": 353,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "P15",
+          "P17"
+        ],
+        "dtypes": {
+          "P15": "float64",
+          "P17": "float64"
+        },
+        "index_categories": {
+          "categories": [
+            "D1 Control",
+            "D1.33 Control",
+            "D1.67 Control",
+            "D2 Control",
+            "D1-1.33 HIPPOa",
+            "D1-1.67 HIPPOa",
+            "D1-2 HIPPOa",
+            "D1-1.33 HIPPOi",
+            "D1-1.67 HIPPOi",
+            "D1-2 HIPPOi"
+          ],
+          "ordered": true
+        },
+        "index_dtype": "object",
+        "index_name": null
+      }
+    },
+    "Figure_4c_programs_dot_size": {
+      "file": "Figure_4c_programs_dot_size.tsv.gz",
+      "sha256": "80752fa7fa64d47fbe4fbf239bdb1e2e9f3e4ebea15b4f314a0abce571a04e9b",
+      "size_bytes": 339,
+      "table_schema": {
+        "categoricals": {},
+        "columns": [
+          "P15",
+          "P17"
+        ],
+        "dtypes": {
+          "P15": "float64",
+          "P17": "float64"
+        },
+        "index_categories": {
+          "categories": [
+            "D1 Control",
+            "D1.33 Control",
+            "D1.67 Control",
+            "D2 Control",
+            "D1-1.33 HIPPOa",
+            "D1-1.67 HIPPOa",
+            "D1-2 HIPPOa",
+            "D1-1.33 HIPPOi",
+            "D1-1.67 HIPPOi",
+            "D1-2 HIPPOi"
+          ],
+          "ordered": true
+        },
+        "index_dtype": "object",
+        "index_name": null
+      }
+    }
+  }
+}
