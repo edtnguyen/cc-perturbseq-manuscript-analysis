@@ -77,6 +77,26 @@ def load_public_paths(root):
                     raise ValueError(f"External institutional path is not allowed in public configuration: {k}. Use downloaded or bundled data.")
                 node[k] = str(p)
     resolve(paths)
+    # Generated files must stay within this checkout's output/ directory even
+    # when a user supplies an override or has SCRATCH/TMPDIR exported.
+    output_root = root / "output"
+    resolved_output = output_root.resolve()
+    if not resolved_output.is_relative_to(root):
+        raise ValueError("Repository output/ must not be a symlink outside the checkout.")
+    if Path(paths["outputs"]["root"]) != resolved_output:
+        raise ValueError("outputs.root must be the repository's output/ directory. Remove the output-root override.")
+    generated_keys = (
+        "public_data.derived_cache", "screen.validation_guide_counts",
+        "ccperturbseq.integrated_anndata", "ccperturbseq.cnmf_h5mu",
+        "hippo_timecourse.query_h5ad", "hippo_timecourse.reprojected_cnmf_h5ad",
+    )
+    for key in generated_keys:
+        try:
+            path = value(paths, key)
+        except KeyError:
+            continue
+        if not path.is_relative_to(resolved_output):
+            raise ValueError(f"Generated file/cache {key} must be beneath repository output/.")
     return config, paths
 
 

@@ -65,30 +65,6 @@ def _merge_config(defaults: Any, overrides: Any) -> Any:
     return overrides
 
 
-def _resolve_output_root(paths: dict[str, Any], root: Path) -> None:
-    """Ensure outputs.root is usable even when SCRATCH is not exported."""
-    outputs = paths.setdefault("outputs", {})
-    raw = outputs.get("root")
-    if raw in (None, ""):
-        outputs["root"] = str(root / "results")
-        return
-
-    text = str(raw)
-    if "${SCRATCH}" in text or "$SCRATCH" in text:
-        scratch = os.environ.get("SCRATCH")
-        if scratch:
-            text = text.replace("${SCRATCH}", scratch).replace("$SCRATCH", scratch)
-        else:
-            text = str(root / "results")
-            warnings.warn(
-                "SCRATCH is not defined; writing generated figures under "
-                f"{root / 'results'}.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-    outputs["root"] = text
-
-
 def load_paths(root: Path) -> tuple[Path, dict[str, Any]]:
     """Load repository-relative public inputs; ignore legacy institutional defaults."""
     from .public_data import load_public_paths
@@ -243,6 +219,10 @@ def initialize_figure(
     public_inputs = prepare_figure_inputs(manifest["figure_id"], root, paths, geo_options=geo_options)
     output_dir = get_path(paths, "outputs.root") / manifest["figure_id"]
     output_dir.mkdir(parents=True, exist_ok=True)
+    # Also route implicit Scanpy saves/caches, not just explicit panel exports.
+    import scanpy as sc
+    sc.settings.figdir = output_dir
+    sc.settings.cachedir = get_path(paths, "public_data.derived_cache") / "scanpy"
 
     mpl.rcParams.update(
         {

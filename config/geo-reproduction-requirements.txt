@@ -32,3 +32,10 @@ muon==0.1.7
 
 # Motif-logo rendering used by retained figure notebooks.
 logomaker==0.8.7
+
+# Direct statistical dependency plus interactive notebook tooling.
+statsmodels>=0.14.5,<0.15
+ipython>=9,<10
+jupyter-client>=8.6,<9
+jupyterlab>=4.4,<5
+packaging>=24,<27

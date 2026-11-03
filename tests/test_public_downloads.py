@@ -88,16 +88,16 @@ def test_manifest_cannot_direct_authenticated_request_to_other_origin(tmp_path):
 
 
 def test_legacy_local_config_does_not_override_portable_paths(tmp_path,monkeypatch):
-    (tmp_path/'config').mkdir();(tmp_path/'config/paths.example.yaml').write_text('outputs:\n  root: results\n')
+    (tmp_path/'config').mkdir();(tmp_path/'config/paths.example.yaml').write_text('outputs:\n  root: output\n')
     (tmp_path/'config/paths.local.yaml').write_text('outputs:\n  root: /oak/private/path\n')
     monkeypatch.delenv('CCPERTURBSEQ_PUBLIC_PATHS',raising=False)
     with pytest.warns(UserWarning,match='Legacy'):
         _,paths=load_public_paths(tmp_path)
-    assert paths['outputs']['root']==str(tmp_path/'results')
+    assert paths['outputs']['root']==str(tmp_path/'output')
 
 
 def test_explicit_institutional_override_is_rejected(tmp_path,monkeypatch):
-    (tmp_path/'config').mkdir();(tmp_path/'config/paths.example.yaml').write_text('outputs:\n  root: results\n')
+    (tmp_path/'config').mkdir();(tmp_path/'config/paths.example.yaml').write_text('outputs:\n  root: output\n')
     override=tmp_path/'override.yaml';override.write_text('outputs:\n  root: /oak/somewhere/else\n')
     monkeypatch.setenv('CCPERTURBSEQ_PUBLIC_PATHS',str(override))
     with pytest.raises(ValueError,match='institutional'):

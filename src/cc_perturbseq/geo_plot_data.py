@@ -170,7 +170,10 @@ def build_plot_bundle(processed_path, directory, dataset, *, overwrite=False):
             key = f"used_in_{panel}"
             if key in rna.obs and not np.array_equal(rna.obs[key].to_numpy(bool), _hippo_panel_mask(aligned, conditions)):
                 raise ValueError(f"Stored {panel} cell mask differs from the existing QC rule.")
-        with geo._local_hippo_inputs(bundle) as (query, projection):
+        # Avoid system TMPDIR (which may point to scratch) for regeneration.
+        temp_parent = Path(directory).resolve().parent
+        temp_parent.mkdir(parents=True, exist_ok=True)
+        with geo._local_hippo_inputs(bundle, parent=temp_parent) as (query, projection):
             tables, metadata = geo._hippo_tables_and_plots(query, projection)
         comparison_tables = tables
     else:

@@ -86,9 +86,9 @@ def s4_files(root):
 def test_s4_full_notebook_no_original_paths_no_crt(tmp_path):
     root=isolated(tmp_path);records,_=s4_files(root);bundle_manifest(root,records)
     run_notebook(root,'notebooks/supplementary/Figure_S04.ipynb')
-    assert len(list((root/'results/Figure_S04/panel_b').glob('*.svg')))==4
-    assert len(list((root/'results/Figure_S04/panel_c').glob('*.svg')))==5
-    settings=json.loads((root/'results/Figure_S04/panel_c/S4c_selection_settings.json').read_text())
+    assert len(list((root/'output/Figure_S04/panel_b').glob('*.svg')))==4
+    assert len(list((root/'output/Figure_S04/panel_c').glob('*.svg')))==5
+    settings=json.loads((root/'output/Figure_S04/panel_c/S4c_selection_settings.json').read_text())
     assert settings['min_target_cells_per_replicate']==20
 
 
@@ -128,8 +128,8 @@ def s6_files(root):
 def test_s6_full_notebook_with_bundled_motifs(tmp_path):
     root=isolated(tmp_path);records=s6_files(root);bundle_manifest(root,records)
     run_notebook(root,'notebooks/supplementary/Figure_S06.ipynb')
-    assert len(list((root/'results/Figure_S06/panel_all').glob('*.svg')))==5
-    tables=root/'results/Figure_S06/panel_all/_program_annotation_source'
+    assert len(list((root/'output/Figure_S06/panel_all').glob('*.svg')))==5
+    tables=root/'output/Figure_S06/panel_all/_program_annotation_source'
     assert len(list(tables.glob('*_motif_enrichment_matrix.csv')))==4
 
 
@@ -143,7 +143,7 @@ def test_s2_full_notebook_reads_only_precomputed_plotting_tables(tmp_path):
     shutil.rmtree(root/'data/geo')
     run_notebook(root,'notebooks/supplementary/Figure_S02.ipynb')
     for panel in ('i','j','l','m','n'):
-        assert list((root/f'results/Figure_S02/panel_{panel}').glob('*.svg'))
+        assert list((root/f'output/Figure_S02/panel_{panel}').glob('*.svg'))
 
 
 def test_all_seven_sources_pass_static_audit():
@@ -152,8 +152,9 @@ def test_all_seven_sources_pass_static_audit():
     report=json.loads(result.stdout);assert len(report['notebooks'])==7 and report['status']=='PASS'
 
 
-def test_missing_data_audit_is_not_false_success():
-    result=subprocess.run([sys.executable,str(ROOT/'scripts/audit_public_inputs.py'),'--check-data'],capture_output=True,text=True)
+def test_missing_data_audit_is_not_false_success(tmp_path):
+    root=isolated(tmp_path)
+    result=subprocess.run([sys.executable,str(root/'scripts/audit_public_inputs.py'),'--check-data'],capture_output=True,text=True)
     assert result.returncode!=0
     assert json.loads(result.stdout)['status']=='INCOMPLETE_DATA'
 

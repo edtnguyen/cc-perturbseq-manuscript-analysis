@@ -94,7 +94,7 @@ def test_regeneration_goes_to_separate_cache_and_matches_published(tmp_path,subm
     original_hash=digest_file(pub/'manifest.json','sha256')
     report=prepare_geo_plot_inputs('ipsc_k562_mix',tmp_path,paths,mode='local_file',local_file=submitted[1])
     assert report['published_comparison']['status']=='MATCH'
-    assert Path(report['directory']).is_relative_to(tmp_path/'data/derived')
+    assert Path(report['directory']).is_relative_to(tmp_path/'output/cache/derived')
     assert digest_file(pub/'manifest.json','sha256')==original_hash
     mtime=(Path(report['directory'])/'manifest.json').stat().st_mtime_ns
     again=prepare_geo_plot_inputs('ipsc_k562_mix',tmp_path,paths,mode='local_file',local_file=submitted[1])

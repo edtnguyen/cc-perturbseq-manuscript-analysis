@@ -26,6 +26,13 @@ Official API documentation: https://github.com/IGVF-DACC/igvf-python-client
 
 ## Repository paths
 
+Figures, source tables and receipts are saved in `output/<figure_id>/`.
+Generated numerical intermediates use `output/cache/derived/`; downloaded input
+files still use `data/igvf/` and `data/geo/downloads/`. All output roots are
+resolved from the checkout, not the notebook's working directory. Overrides
+cannot redirect generated outputs to scratch or outside `output/`.
+
+
 All paths in `config/paths.example.yaml` are resolved from the repository root,
 not from the directory containing the notebook. Legacy `paths.local.yaml` and
 `CCPERTURBSEQ_PATHS` are deliberately ignored, so an old Sherlock configuration
@@ -33,7 +40,7 @@ cannot silently override public inputs. Use `CCPERTURBSEQ_PUBLIC_PATHS` for an
 explicit portable override file. Existing local files are not overwritten.
 
 Day-specific annotated H5AD and cNMF H5MU partitions are assembled in
-`data/derived/` in the original, published cell order. Existing UMAP coordinates,
+`output/cache/derived/` in the original, published cell order. Existing UMAP coordinates,
 program values and guide-column identities are preserved. cNMF and UMAP are not
 refitted. The Figure 1d derived H5MU contains only its required cNMF modality.
 
@@ -190,7 +197,7 @@ embedded matrix checksums and reference tables when present. Hippo uses the
 unchanged condition-specific QC, s8 exclusion, panel-specific RNA normalization,
 and fixed-reference CLR values. S2 recomputes sparse guide metrics without
 reclustering. Regenerated tables go to a content-addressed directory under
-`data/derived/geo_plots/`; published tables are never overwritten by notebook
+`output/cache/derived/geo_plots/`; published tables are never overwritten by notebook
 execution. `comparison_to_published.json` records whether all tables agree when
 a reference bundle is present. Differences are reported, not silently ignored.
 The plots in that run use the regenerated tables.

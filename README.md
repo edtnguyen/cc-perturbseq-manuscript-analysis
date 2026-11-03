@@ -25,17 +25,66 @@ Supplementary figures:
 - `data/figure_02/` — bundled Figure 2 workbook and documentation
 - `docs/` — input provenance, source audits, motif-input records, and figure-reproduction notes
 
+## Installation
+
+Create a new environment from the repository root (Python 3.11; CPU only):
+
+```bash
+conda env create --file environment.yml
+conda activate ccperturbseq-figures
+python -m ipykernel install --user --name ccperturbseq-figures --display-name "Python (ccperturbseq figures)"
+python scripts/check_environment.py
+```
+
+In Jupyter, select **Python (ccperturbseq figures)** and restart the kernel before
+Run All. The YAML includes the scientific libraries, motif rendering, Excel/HDF5
+readers, JupyterLab/kernel, and test dependencies. Do not modify an existing
+`sc-dl` or `sceptre_env` environment. No R, rpy2, CUDA, or external programDE
+installation is needed for the seven published figure notebooks. Optional raw
+CRT estimation and FASTQ preprocessing are separate workflows, not notebook
+reproduction requirements.
+
+See [Installation and troubleshooting](docs/INSTALLATION.md) for Sherlock,
+regular Conda, and virtual-environment instructions. The import/package check
+does not download datasets; check data separately with
+`python scripts/audit_public_inputs.py --check-data`.
+
+## Generated output files
+
+Every notebook writes figures, source-data tables and receipts beneath:
+
+```text
+output/
+├── Figure_01/
+├── Figure_02/
+├── Figure_03/
+├── Figure_04/
+├── Figure_S02/
+├── Figure_S04/
+├── Figure_S06/
+└── cache/derived/
+```
+
+These paths resolve from the repository root, even when Jupyter starts inside
+`notebooks/main/` or `notebooks/supplementary/`. `output/` is ignored by Git.
+The setup cell prints its absolute figure-output directory. Old scratch/results
+outputs and old downloaded caches are not moved or deleted. Existing saved
+notebook outputs record their earlier runs; rerun to generate files in `output/`.
+Source inputs remain in `data/reproduction/`; unchanged IGVF/GEO downloads are
+cached in `data/igvf/` and `data/geo/downloads/`. New numerical intermediates
+(including GEO regeneration) go under `output/cache/derived/`.
+
 ## Public data and execution
 
 Run notebooks from the repository checkout using the Python 3.11 environment
-specified in `config/geo-reproduction-requirements.txt`. Their setup cells download
+defined in `environment.yml`. Their setup cells download
 the required checksum-pinned IGVF files automatically, anonymously by default.
 Optional portal access-key authentication is supported without storing secrets.
 
 The notebooks use repository-relative paths from `config/paths.example.yaml`.
 Legacy institutional `paths.local.yaml` overrides are not used. Large downloaded
 objects are cached under `data/igvf/`; derived representations are written under
-`data/derived/`; figures and source tables are written under `results/`.
+`output/cache/derived/`; figures and source tables are written under `output/<figure_id>/`.
 
 Additional manuscript inputs are provided through `data/reproduction/`, including
 the U-test table, exact program representations and annotations, motif files, and
@@ -90,7 +139,7 @@ An unreleased record requires `DATA_SOURCE="local_file"` and `GEO_LOCAL_FILE`
 pointing to the submitted integrated H5MU until the files become public.
 
 Downloads are cached in `data/geo/downloads/`. Regenerated tables go to
-`data/derived/geo_plots/` and are compared with published tables when available;
+`output/cache/derived/geo_plots/` and are compared with published tables when available;
 the published precomputed bundle is never overwritten. Regeneration starts from
 the submitted processed RNA plus guide/program modalities, not FASTQ files; it
 does not refit cNMF, recluster cells, or reprocess sequencing reads.

@@ -75,7 +75,7 @@ print('ALL_S2_CELLS_GEO_ROUTE_PASSED')
 '''
     execute_script(root,script)
     for panel in ('i','j','l','m','n'):
-        assert list((root/f'results/Figure_S02/panel_{panel}').glob('*.svg'))
+        assert list((root/f'output/Figure_S02/panel_{panel}').glob('*.svg'))
 
 
 @pytest.mark.parametrize('figure,cell_index,panel',[('Figure_03',10,'f'),('Figure_04',4,'c')])
@@ -95,7 +95,7 @@ _apply_source_style()
 name,index,panel=sys.argv[1],int(sys.argv[2]),sys.argv[3]
 nb=json.loads((Path('notebooks/main')/(name+'.ipynb')).read_text())
 table=pd.DataFrame([{'panel':panel}]);table.attrs['figure_id']=name
-ctx={'root':Path.cwd(),'output_dir':Path.cwd()/'results'/name,'panels':table,'git_commit':'fixture', 'config':Path('config/paths.example.yaml')}
+ctx={'root':Path.cwd(),'output_dir':Path.cwd()/'output'/name,'panels':table,'git_commit':'fixture', 'config':Path('config/paths.example.yaml')}
 ctx['output_dir'].mkdir(parents=True)
 PLOT_DATA_DIR=Path.cwd()/'data/reproduction/geo_plots/hippo_timecourse'
 DATA_SOURCE='precomputed'

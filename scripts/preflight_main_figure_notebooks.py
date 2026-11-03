@@ -233,7 +233,7 @@ def expand_path(value: Any, root: Path, key: str) -> Path:
         text = (
             text.replace("${SCRATCH}", scratch).replace("$SCRATCH", scratch)
             if scratch
-            else str(root / "results")
+            else str(root / "output")
         )
     expanded = os.path.expandvars(text)
     if "$" in expanded:

@@ -49,3 +49,8 @@ config/paths.public.local.yaml
 # Local-only backups of refreshed GEO plotting bundles.
 data/geo_plots.backup-*/
 data/reproduction/.geo-plots-*/
+
+# Generated figure files, numerical tables, and intermediate caches.
+/output/
+# Optional local virtual environment (Conda environments can live elsewhere).
+/.venv/

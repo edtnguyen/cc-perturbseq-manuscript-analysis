@@ -1,19 +1,19 @@
 # Portable figure inputs. Relative paths are resolved against the repository root.
 # Override deliberately via CCPERTURBSEQ_PUBLIC_PATHS; legacy local paths are ignored.
 outputs:
-  root: results
+  root: output
 public_data:
   igvf_cache: data/igvf
   geo_cache: data/geo/downloads
-  derived_cache: data/derived
+  derived_cache: output/cache/derived
   bundle_manifest: data/reproduction/bundle_manifest.json
 screen:
   genomewide_mageck_pos_vs_neg: data/igvf/IGVFFI9001HIYI.tsv.gz
   genomewide_utest_pos_vs_neg: data/reproduction/screen/combined_utest_P1P2_adj_test.txt
-  validation_guide_counts: data/derived/validation_guide_counts.tsv
+  validation_guide_counts: output/cache/derived/validation_guide_counts.tsv
 ccperturbseq:
-  integrated_anndata: data/derived/ccperturbseq_all_days.h5ad
-  cnmf_h5mu: data/derived/ccperturbseq_cnmf_all_days.h5mu
+  integrated_anndata: output/cache/derived/ccperturbseq_all_days.h5ad
+  cnmf_h5mu: output/cache/derived/ccperturbseq_cnmf_all_days.h5mu
   cnmf_usage: data/reproduction/programs/cnmf_usage.consensus.tsv.gz
   cnmf_spectra: data/reproduction/programs/cnmf_spectra.consensus.tsv.gz
   program_annotations: data/reproduction/programs/Programs_annotations.xlsx
@@ -31,8 +31,8 @@ geo:
   hippo_h5mu: data/geo/Hippo_timecourse_integrated.h5mu
   mixed_h5mu: data/geo/iPSC_K562_mixed_integrated.h5mu
 hippo_timecourse:
-  query_h5ad: data/derived/hippo/rna.h5ad
-  reprojected_cnmf_h5ad: data/derived/hippo/cnmf.h5ad
+  query_h5ad: output/cache/derived/hippo/rna.h5ad
+  reprojected_cnmf_h5ad: output/cache/derived/hippo/cnmf.h5ad
 
 precomputed:
   hippo: data/reproduction/geo_plots/hippo_timecourse
