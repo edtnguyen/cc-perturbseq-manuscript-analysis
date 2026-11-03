@@ -40,13 +40,15 @@ objects are cached under `data/igvf/`; derived representations are written under
 Additional manuscript inputs are provided through `data/reproduction/`, including
 the U-test table, exact program representations and annotations, motif files, and
 completed S4 numerical results. A one-time maintainer collector prepares and
-checks these files. The Hippo and mixed-cell integrated GEO H5MUs belong in
-`data/geo/`; their download URLs are not configured yet.
+checks these files. Hippo and mixed-cell panels use compact precomputed tables
+by default. Optional regeneration downloads the submitted integrated H5MUs from
+GEO: **GSE352939** (Hippo) and **GSE352893** (iPSC-K562 mix).
 
-**Publication readiness:** adding the download code does not populate the
-companion bundle or the GEO files. Until the actual companion data is committed
-and the GEO files are available, affected notebooks stop with explicit missing-
-input errors rather than using an inaccessible institutional fallback.
+**Publication readiness:** default plotting requires the companion data and
+precomputed tables, not the large GEO objects. Optional GEO regeneration requires
+publicly accessible processed supplementary files. An assigned accession alone
+does not guarantee that downloads are released. Missing inputs produce explicit
+errors; no workflow falls back to institutional filesystem paths.
 
 ```bash
 python scripts/audit_public_inputs.py
@@ -55,7 +57,7 @@ python scripts/prepare_public_data.py --figure Figure_01
 ```
 
 The first command checks all seven notebook sources. The second checks actual
-companion-file checksums and GEO-file availability; it reports incomplete data
+companion and precomputed plotting-table checksums; it reports incomplete data
 when files are absent. The third prepares inputs for one figure (repeat
 `--figure` for additional figures).
 
@@ -68,9 +70,37 @@ calculations, plotting styles, and saved notebook figures are retained.
 
 Figures 3f, 4c and S2 default to the checksummed tables under
 `data/reproduction/geo_plots/`. No GEO download or original single-cell file is
-needed for this route. Set `DATA_SOURCE="geo"` and `GEO_ACCESSION` in the notebook
-to regenerate those tables from the submitted integrated H5MU; use `local_file`
-mode before GEO release. Regenerated data are kept separately in `data/derived/`.
+needed for this route. The optional regeneration settings are already configured:
+
+| Experiment | GEO accession | Notebook / panels |
+|---|---|---|
+| Parse v3 CC-Perturb-seq, iPSC-K562 mix | [GSE352893](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE352893) | `Figure_S02.ipynb`, panels i, j, l, m, n |
+| Small molecule Hippo scRNA-Seq | [GSE352939](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE352939) | `Figure_03.ipynb` panel f and `Figure_04.ipynb` panel c |
+
+To download the submitted object and regenerate plotting inputs, change only:
+
+```python
+DATA_SOURCE = "geo"
+```
+
+The notebook retains the appropriate `GEO_ACCESSION` above. `GEO_FILENAME=None`
+automatically discovers the processed supplementary file; set its exact filename
+only if multiple matching files are reported. Released records need no GEO login.
+An unreleased record requires `DATA_SOURCE="local_file"` and `GEO_LOCAL_FILE`
+pointing to the submitted integrated H5MU until the files become public.
+
+Downloads are cached in `data/geo/downloads/`. Regenerated tables go to
+`data/derived/geo_plots/` and are compared with published tables when available;
+the published precomputed bundle is never overwritten. Regeneration starts from
+the submitted processed RNA plus guide/program modalities, not FASTQ files; it
+does not refit cNMF, recluster cells, or reprocess sequencing reads.
+
+Command-line equivalents:
+
+```bash
+python scripts/prepare_geo_plot_data.py --dataset ipsc_k562_mix --geo-accession GSE352893
+python scripts/prepare_geo_plot_data.py --dataset hippo_timecourse --geo-accession GSE352939
+```
 
 Maintainers can run `python scripts/collect_publication_data.py --geo-plots-only --apply`
 to generate just these two plotting bundles, then commit and push them. This does

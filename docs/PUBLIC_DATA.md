@@ -148,14 +148,23 @@ In the relevant notebook settings:
 
 ```python
 DATA_SOURCE = "geo"
-GEO_ACCESSION = "GSE123456"  # Replace with this experiment's public GSE or GSM
+GEO_ACCESSION = "GSE352939"  # Hippo: Figures 3f/4c; Figure S2 uses GSE352893
 GEO_FILENAME = None         # Or the exact processed supplementary filename
 GEO_EXPECTED_SHA256 = None  # Optional SHA-256 of the decompressed H5MU
 GEO_LOCAL_FILE = None
 ```
 
-The example accession above is illustrative, not an accession assigned to this
-study. Public study accessions have not yet been supplied in this repository.
+The notebooks already contain the study-specific accessions below; only
+`DATA_SOURCE` needs to change from `"precomputed"` to `"geo"`.
+
+| Dataset | Accession | Notebook |
+|---|---|---|
+| Parse v3 CC-Perturb-seq, iPSC-K562 mix | [GSE352893](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE352893) | Figure S2 |
+| Small molecule Hippo scRNA-Seq | [GSE352939](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE352939) | Figures 3 and 4 |
+
+Accessions identify the submissions; anonymous downloads still require the
+processed files to be publicly released. Filenames are resolved from metadata,
+not guessed from the accession.
 The resolver reads NCBI SOFT metadata, selects the integrated processed file,
 and downloads it over HTTPS. Series- and sample-level attachments are supported.
 Ambiguous matches require an explicit filename. A `.h5mu.gz` is decompressed
@@ -189,8 +198,8 @@ The plots in that run use the regenerated tables.
 A command-line equivalent is available:
 
 ```bash
-python scripts/prepare_geo_plot_data.py --dataset hippo_timecourse --geo-accession GSE123456
-python scripts/prepare_geo_plot_data.py --dataset ipsc_k562_mix --local-file data/geo/iPSC_K562_mixed_integrated.h5mu
+python scripts/prepare_geo_plot_data.py --dataset hippo_timecourse --geo-accession GSE352939
+python scripts/prepare_geo_plot_data.py --dataset ipsc_k562_mix --geo-accession GSE352893
 ```
 
 NCBI interface documentation:
@@ -217,8 +226,9 @@ notebooks in a fresh process with access to institutional paths blocked. They
 are portability tests, not a run on the unpublished study companion files.
 Additional tests compare original Hippo producers with table-based rendering,
 verify optional GEO/local regeneration, and execute the affected plotting cells
-without institutional paths. Actual accession-specific downloads require the
-public study accession; they cannot be certified before it is available.
+without institutional paths. Accession-specific end-to-end regeneration requires
+public access to the submitted processed objects; a configured accession or a
+passing mocked-download test does not establish that GEO has released those files.
 
 ## Small intermediate files, without creating an integrated H5MU
 

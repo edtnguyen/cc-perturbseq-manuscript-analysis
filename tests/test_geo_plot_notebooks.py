@@ -45,19 +45,21 @@ def test_entire_s2_geo_mode_with_mock_ncbi_and_real_h5mu(tmp_path):
     path=root/'notebooks/supplementary/Figure_S02.ipynb';nb=json.loads(path.read_text())
     for c in nb['cells']:
         if c['cell_type']=='code':
-            text=''.join(c['source']).replace('DATA_SOURCE = "precomputed"','DATA_SOURCE = "geo"').replace('GEO_ACCESSION = ""','GEO_ACCESSION = "GSE12345"')
+            text=''.join(c['source']).replace('DATA_SOURCE = "precomputed"','DATA_SOURCE = "geo"')
             c['source']=text.splitlines(keepends=True)
     path.write_text(json.dumps(nb))
     script=GUARD+'''
 import io
 from src.cc_perturbseq.geo_download import GeoClient
-url='https://ftp.ncbi.nlm.nih.gov/geo/series/GSE12nnn/GSE12345/suppl/GSE12345_iPSC_K562_mixed_integrated.h5mu'
+url='https://ftp.ncbi.nlm.nih.gov/geo/series/GSE352nnn/GSE352893/suppl/GSE352893_iPSC_K562_mixed_integrated.h5mu'
 class Response(io.BytesIO):
     def __init__(self,raw):
         super().__init__(raw);self.headers={'Content-Length':str(len(raw))}
 def serve(self,requested):
     if 'acc.cgi?' in requested:
-        return Response(('^SERIES = GSE12345\\n!Series_supplementary_file = '+url+'\\n').encode())
+        from urllib.parse import urlparse,parse_qs
+        assert parse_qs(urlparse(requested).query)['acc']==['GSE352893']
+        return Response(('^SERIES = GSE352893\\n!Series_supplementary_file = '+url+'\\n').encode())
     assert requested==url
     return Response(Path('served/iPSC_K562_mixed_integrated.h5mu').read_bytes())
 GeoClient._open=serve
@@ -113,7 +115,8 @@ def test_notebook_defaults_and_runtime_options_are_explicit():
     for path in (ROOT/'notebooks/main/Figure_03.ipynb',ROOT/'notebooks/main/Figure_04.ipynb',ROOT/'notebooks/supplementary/Figure_S02.ipynb'):
         n=json.loads(path.read_text());text='\n'.join(''.join(c['source']) for c in n['cells'] if c['cell_type']=='code')
         assert 'DATA_SOURCE = "precomputed"' in text
-        assert 'GEO_ACCESSION = ""' in text
+        expected = 'GSE352893' if path.name == 'Figure_S02.ipynb' else 'GSE352939'
+        assert f'GEO_ACCESSION = "{expected}"' in text
         assert 'initialize_figure(FIGURE, geo_options=GEO_OPTIONS)' in text
         assert 'load_mixed_geo(' not in text and 'extract_hippo_geo(' not in text
         assert 'prepare_figure3f_dotplots(' not in text and 'prepare_figure4c_dotplots(' not in text
