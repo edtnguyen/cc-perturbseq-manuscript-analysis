@@ -1,0 +1,21 @@
+name: Repository output and environment
+on:
+  push:
+    branches: [maintenance/repo-output-environment]
+    paths: [.github/workflows/repo-output-environment.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 8c70476231298d41e08184e75b687bddb524a52a
+          lfs: false
+      - run: git archive --format=tar.gz --output=/tmp/output-env-baseline.tar.gz HEAD src scripts config tests notebooks README.md .gitignore docs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: output-env-baseline
+          path: /tmp/output-env-baseline.tar.gz
+          retention-days: 3
